@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Mastery Optimizer — UCSC</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #161622;
+    --border: #252535;
+    --accent: #7c5cfc;
+    --accent2: #00e5b0;
+    --accent3: #ff6b6b;
+    --amber: #ffc857;
+    --text: #e8e8f0;
+    --muted: #6b6b8a;
+    --glow: rgba(124,92,252,0.15);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NOISE TEXTURE */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:0; opacity:0.6;
+  }
+
+  /* HEADER */
+  header {
+    position: relative;
+    padding: 3rem 2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(124,92,252,0.08) 0%, transparent 100%);
+    text-align: center;
+    overflow: hidden;
+  }
+  header::after {
+    content:'';
+    position:absolute; bottom:-1px; left:50%; transform:translateX(-50%);
+    width:200px; height:2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  .badge {
+    display:inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase;
+    color: var(--accent2);
+    border: 1px solid rgba(0,229,176,0.3);
+    padding: 0.3rem 0.8rem; border-radius:2px;
+    margin-bottom:1rem;
+  }
+  h1 {
+    font-size: clamp(2rem,5vw,3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 60%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle {
+    margin-top:0.75rem;
+    font-family:'Space Mono',monospace;
+    font-size:0.8rem;
+    color:var(--muted);
+    letter-spacing:0.05em;
+  }
+  .rule-pills {
+    display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;
+    margin-top:1.5rem;
+  }
+  .pill {
+    display:flex; align-items:center; gap:0.5rem;
+    padding:0.5rem 1rem; border-radius:100px;
+    font-size:0.78rem; font-weight:700; letter-spacing:0.03em;
+  }
+  .pill-pareto { background:rgba(255,200,87,0.12); color:var(--amber); border:1px solid rgba(255,200,87,0.25); }
+  .pill-10k { background:rgba(124,92,252,0.12); color:var(--accent); border:1px solid rgba(124,92,252,0.25); }
+
+  /* MAIN LAYOUT */
+  main { max-width:1200px; margin:0 auto; padding:2rem 1.5rem; position:relative; z-index:1; }
+
+  /* TABS */
+  .tabs { display:flex; gap:0.25rem; margin-bottom:2rem; border-bottom:1px solid var(--border); }
+  .tab {
+    padding:0.75rem 1.25rem; cursor:pointer;
+    font-size:0.85rem; font-weight:700; letter-spacing:0.03em;
+    color:var(--muted); border-bottom:2px solid transparent;
+    transition: all 0.2s; background:none; border-top:none; border-left:none; border-right:none;
+    font-family:'Syne',sans-serif;
+  }
+  .tab:hover { color:var(--text); }
+  .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+  /* PANELS */
+  .panel { display:none; }
+  .panel.active { display:block; animation: fadeUp 0.3s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  /* GRID */
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+  .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+  @media(max-width:768px) { .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity:0;
+    transition:opacity 0.3s;
+  }
+  .card:hover::before { opacity:1; }
+  .card-title {
+    font-size:0.7rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:1rem; font-family:'Space Mono',monospace;
+  }
+
+  /* STAT CARDS */
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius:12px; padding:1.25rem;
+    text-align:center;
+  }
+  .stat-value {
+    font-size:2.5rem; font-weight:800;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .stat-label { font-size:0.72rem; color:var(--muted); margin-top:0.25rem; font-family:'Space Mono',monospace; }
+
+  /* INPUTS */
+  label { font-size:0.78rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:0.5rem; font-family:'Space Mono',monospace; }
+  input, select {
+    width:100%; background:var(--surface); border:1px solid var(--border);
+    color:var(--text); padding:0.65rem 0.9rem; border-radius:8px;
+    font-family:'Syne',sans-serif; font-size:0.9rem;
+    transition: border-color 0.2s;
+    outline:none;
+  }
+  input:focus, select:focus { border-color: var(--accent); box-shadow:0 0 0 3px rgba(124,92,252,0.1); }
+  select option { background:var(--surface); }
+
+  /* BUTTONS */
+  .btn {
+    display:inline-flex; align-items:center; gap:0.5rem;
+    padding:0.7rem 1.4rem; border-radius:8px; border:none; cursor:pointer;
+    font-family:'Syne',sans-serif; font-size:0.88rem; font-weight:700;
+    transition: all 0.2s;
+  }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { background:#6b4de6; transform:translateY(-1px); box-shadow:0 4px 20px rgba(124,92,252,0.4); }
+  .btn-secondary { background:var(--surface); color:var(--text); border:1px solid var(--border); }
+  .btn-secondary:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-danger { background:rgba(255,107,107,0.15); color:var(--accent3); border:1px solid rgba(255,107,107,0.3); }
+  .btn-danger:hover { background:rgba(255,107,107,0.25); }
+  .btn-sm { padding:0.4rem 0.8rem; font-size:0.78rem; }
+
+  /* PROGRESS BARS */
+  .prog-wrap { background:var(--surface); border-radius:100px; height:8px; overflow:hidden; }
+  .prog-bar {
+    height:100%; border-radius:100px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .prog-bar.warn { background: linear-gradient(90deg, var(--amber), var(--accent3)); }
+  .prog-bar.good { background: linear-gradient(90deg, var(--accent2), #00b4d8); }
+
+  /* MODULE TABLE */
+  table { width:100%; border-collapse:collapse; }
+  th {
+    font-family:'Space Mono',monospace; font-size:0.65rem; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--muted);
+    padding:0.6rem 0.75rem; text-align:left;
+    border-bottom:1px solid var(--border);
+  }
+  td { padding:0.7rem 0.75rem; border-bottom:1px solid rgba(37,37,53,0.5); font-size:0.85rem; }
+  tr:hover td { background:rgba(124,92,252,0.04); }
+  tr:last-child td { border-bottom:none; }
+
+  /* GRADE BADGES */
+  .grade-badge {
+    display:inline-block; padding:0.2rem 0.5rem; border-radius:4px;
+    font-family:'Space Mono',monospace; font-size:0.75rem; font-weight:700;
+  }
+  .grade-A { background:rgba(0,229,176,0.15); color:var(--accent2); }
+  .grade-B { background:rgba(124,92,252,0.15); color:var(--accent); }
+  .grade-C { background:rgba(255,200,87,0.15); color:var(--amber); }
+  .grade-D { background:rgba(255,107,107,0.15); color:var(--accent3); }
+  .grade-E { background:rgba(100,100,120,0.2); color:var(--muted); }
+
+  /* PARETO CHART */
+  #paretoChart { width:100%; height:220px; position:relative; }
+  .bar-wrap { display:flex; align-items:flex-end; gap:4px; height:180px; }
+  .bar-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .bar-rect {
+    width:100%; border-radius:4px 4px 0 0;
+    background: linear-gradient(180deg, var(--accent), rgba(124,92,252,0.3));
+    transition: height 0.5s ease;
+    cursor:pointer; position:relative;
+  }
+  .bar-rect.pareto-20 { background: linear-gradient(180deg, var(--accent2), rgba(0,229,176,0.3)); }
+  .bar-rect:hover { filter:brightness(1.3); }
+  .bar-label { font-size:0.6rem; color:var(--muted); text-align:center; font-family:'Space Mono',monospace; writing-mode:horizontal-tb; }
+  .bar-pct { font-size:0.65rem; color:var(--accent2); font-family:'Space Mono',monospace; }
+
+  /* GPA GAUGE */
+  .gauge-wrap { display:flex; justify-content:center; padding:1rem 0; }
+  .gauge { position:relative; width:160px; height:90px; }
+  .gauge svg { overflow:visible; }
+
+  /* 10K TRACKER */
+  .hour-track { margin-bottom:1rem; }
+  .hour-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; }
+  .hour-subject { font-weight:700; font-size:0.9rem; }
+  .hour-count { font-family:'Space Mono',monospace; font-size:0.8rem; color:var(--accent); }
+  .milestone {
+    display:flex; align-items:center; gap:0.75rem;
+    padding:0.6rem 1rem; border-radius:8px;
+    margin-top:0.75rem;
+    background:rgba(124,92,252,0.08);
+    border:1px solid rgba(124,92,252,0.2);
+    font-size:0.82rem;
+  }
+  .milestone.achieved { background:rgba(0,229,176,0.08); border-color:rgba(0,229,176,0.25); color:var(--accent2); }
+  .milestone-icon { font-size:1.1rem; }
+
+  /* INSIGHTS */
+  .insight {
+    padding:1rem 1.25rem;
+    border-radius:8px;
+    margin-bottom:0.75rem;
+    border-left:3px solid;
+    font-size:0.88rem;
+    line-height:1.5;
+  }
+  .insight-good { background:rgba(0,229,176,0.06); border-color:var(--accent2); }
+  .insight-warn { background:rgba(255,200,87,0.06); border-color:var(--amber); }
+  .insight-info { background:rgba(124,92,252,0.06); border-color:var(--accent); }
+  .insight-title { font-weight:700; font-size:0.75rem; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:0.25rem; font-family:'Space Mono',monospace; }
+
+  /* SECTION HEADER */
+  .section-header { margin-bottom:1.5rem; }
+  .section-header h2 { font-size:1.4rem; font-weight:800; margin-bottom:0.25rem; }
+  .section-header p { color:var(--muted); font-size:0.85rem; }
+
+  /* CHIP */
+  .chip {
+    display:inline-flex; align-items:center; gap:0.3rem;
+    padding:0.25rem 0.6rem; border-radius:100px;
+    font-size:0.7rem; font-weight:700; font-family:'Space Mono',monospace;
+  }
+  .chip-purple { background:rgba(124,92,252,0.15); color:var(--accent); }
+  .chip-green { background:rgba(0,229,176,0.12); color:var(--accent2); }
+  .chip-amber { background:rgba(255,200,87,0.12); color:var(--amber); }
+  .chip-red { background:rgba(255,107,107,0.12); color:var(--accent3); }
+
+  /* SCHEDULE GRID */
+  .schedule-slot {
+    padding:0.75rem; border-radius:8px;
+    background:var(--surface); border:1px solid var(--border);
+    margin-bottom:0.5rem; cursor:pointer;
+    transition: border-color 0.2s;
+  }
+  .schedule-slot:hover { border-color:var(--accent); }
+  .schedule-slot.focused { border-color:var(--accent2); background:rgba(0,229,176,0.05); }
+  .slot-time { font-family:'Space Mono',monospace; font-size:0.7rem; color:var(--muted); }
+  .slot-subject { font-weight:700; font-size:0.88rem; margin-top:0.2rem; }
+
+  /* TOAST */
+  #toast {
+    position:fixed; bottom:2rem; right:2rem;
+    background:var(--card); border:1px solid var(--accent);
+    color:var(--text); padding:0.85rem 1.25rem;
+    border-radius:10px; font-size:0.85rem;
+    transform:translateY(100px); opacity:0;
+    transition: all 0.3s; z-index:999;
+    box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  }
+  #toast.show { transform:translateY(0); opacity:1; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--surface); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--accent); }
+
+  /* RESPONSIVE */
+  @media(max-width:600px) {
+    header { padding:2rem 1rem 1.5rem; }
+    main { padding:1.5rem 1rem; }
+    .tabs { overflow-x:auto; white-space:nowrap; }
+  }
+
+  .divider { height:1px; background:var(--border); margin:1.5rem 0; }
+  .fw { width:100%; }
+  .mt-1 { margin-top:0.5rem; }
+  .mt-2 { margin-top:1rem; }
+  .mt-3 { margin-top:1.5rem; }
+  .flex { display:flex; align-items:center; gap:0.75rem; }
+  .flex-between { display:flex; justify-content:space-between; align-items:center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">🎓 UCSC · University of Colombo School of Computing</div>
+  <h1>The Mastery Optimizer</h1>
+  <p class="subtitle">10,000-Hour Rule × 80/20 Pareto Principle · Your academic edge</p>
+  <div class="rule-pills">
+    <span class="pill pill-pareto">⚡ Pareto 80/20 — Focus on 20% that drives 80% of results</span>
+    <span class="pill pill-10k">🔥 10K Rule — Deliberate practice tracking</span>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab" onclick="switchTab('modules')">Modules & GPA</button>
+    <button class="tab" onclick="switchTab('pareto')">Pareto Analysis</button>
+    <button class="tab" onclick="switchTab('tenk')">10K Tracker</button>
+    <button class="tab" onclick="switchTab('schedule')">Smart Schedule</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="tab-dashboard" class="panel active">
+    <div class="section-header">
+      <h2>Your Academic Command Center</h2>
+      <p>Overview of your progress at UCSC — powered by science-backed mastery principles</p>
+    </div>
+
+    <div id="profileSetup" class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">🚀 Quick Setup</div>
+      <div class="grid-2" style="gap:1rem; margin-bottom:1rem;">
+        <div>
+          <label>Your Name</label>
+          <input type="text" id="studentName" placeholder="e.g. Kavya Perera" oninput="saveProfile()">
+        </div>
+        <div>
+          <label>Degree Programme</label>
+          <select id="degreeSelect" onchange="saveProfile(); updateModuleList()">
+            <option value="CS">BSc. in Computer Science</option>
+            <option value="CS_HONS">BSc. (Hons) in Computer Science</option>
+            <option value="SE_HONS">BSc. (Hons) in Software Engineering</option>
+            <option value="IS">BSc. in Information Systems</option>
+            <option value="IS_HONS">BSc. (Hons) in Information Systems</option>
+          </select>
+        </div>
+        <div>
+          <label>Current Academic Year</label>
+          <select id="yearSelect" onchange="saveProfile()">
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+            <option value="4">Year 4</option>
+          </select>
+        </div>
+        <div>
+          <label>Current Semester</label>
+          <select id="semSelect" onchange="saveProfile()">
+            <option value="1">Semester 1</option>
+            <option value="2">Semester 2</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" id="dashStats">
+      <div class="stat-card">
+        <div class="stat-value" id="dashGPA">–</div>
+        <div class="stat-label">Current GPA</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="dashHours">0</div>
+        <div class="stat-label">Practice Hours Logged</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="dashCredits">0</div>
+        <div class="stat-label">Credits Completed</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:1.5rem;">
+      <div class="card">
+        <div class="card-title">GPA Progress to First Class (3.70)</div>
+        <div style="margin:0.75rem 0;">
+          <div class="flex-between" style="margin-bottom:0.5rem;">
+            <span id="gpaVal" style="font-size:1.1rem;font-weight:700;">–</span>
+            <span style="font-size:0.75rem;color:var(--muted);">Target: 3.70</span>
+          </div>
+          <div class="prog-wrap"><div class="prog-bar" id="gpaBar" style="width:0%"></div></div>
+        </div>
+        <div class="mt-2" style="font-size:0.82rem;color:var(--muted);">
+          <span class="chip chip-green">First Class ≥ 3.70</span>
+          <span class="chip chip-purple" style="margin-left:0.5rem;">2nd Upper ≥ 3.30</span>
+          <span class="chip chip-amber" style="margin-left:0.5rem;">2nd Lower ≥ 3.00</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">10K Mastery Progress</div>
+        <div id="tenkDashList"></div>
+        <div class="mt-2" style="font-size:0.78rem;color:var(--muted);font-family:'Space Mono',monospace;">
+          10,000 hours = world-class expertise (K. Anders Ericsson)
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-title">🧠 AI Insights — Pareto + 10K Combined</div>
+      <div id="insightsList"></div>
+    </div>
+  </div>
+
+  <!-- MODULES & GPA -->
+  <div id="tab-modules" class="panel">
+    <div class="section-header">
+      <h2>Module Grades & GPA Calculator</h2>
+      <p>UCSC grading: A+(4.00) A(4.00) A-(3.70) B+(3.30) B(3.00) B-(2.70) C+(2.30) C(2.00) C-(1.70) D+(1.30) D(1.00) E/F(0.00)</p>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">Add Module Grade</div>
+      <div class="grid-2" style="gap:1rem;">
+        <div>
+          <label>Module</label>
+          <select id="moduleSelect">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+        <div>
+          <label>Grade</label>
+          <select id="gradeSelect">
+            <option value="4.00">A+ / A (4.00)</option>
+            <option value="3.70">A- (3.70)</option>
+            <option value="3.30">B+ (3.30)</option>
+            <option value="3.00">B (3.00)</option>
+            <option value="2.70">B- (2.70)</option>
+            <option value="2.30">C+ (2.30)</option>
+            <option value="2.00">C (2.00)</option>
+            <option value="1.70">C- (1.70)</option>
+            <option value="1.30">D+ (1.30)</option>
+            <option value="1.00">D (1.00)</option>
+            <option value="0.00">E / F (0.00)</option>
+          </select>
+        </div>
+        <div>
+          <label>Credits</label>
+          <select id="creditSelect">
+            <option value="1">1 Credit (2L)</option>
+            <option value="2">2 Credits (2L+1P)</option>
+            <option value="3" selected>3 Credits (3L)</option>
+            <option value="4">4 Credits (3L+1P)</option>
+            <option value="5">5 Credits (4L+1P)</option>
+          </select>
+        </div>
+        <div>
+          <label>Year / Semester</label>
+          <select id="modYearSem">
+            <option value="Y1S1">Year 1 · Sem 1</option>
+            <option value="Y1S2">Year 1 · Sem 2</option>
+            <option value="Y2S1">Year 2 · Sem 1</option>
+            <option value="Y2S2">Year 2 · Sem 2</option>
+            <option value="Y3S1">Year 3 · Sem 1</option>
+            <option value="Y3S2">Year 3 · Sem 2</option>
+            <option value="Y4S1">Year 4 · Sem 1</option>
+            <option value="Y4S2">Year 4 · Sem 2</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-2 flex">
+        <button class="btn btn-primary" onclick="addGrade()">+ Add Grade</button>
+        <button class="btn btn-secondary" onclick="clearAllGrades()">Clear All</button>
+      </div>
+    </div>
+
+    <!-- GPA Summary -->
+    <div class="grid-3" style="margin-bottom:1.5rem;">
+      <div class="stat-card">
+        <div class="stat-value" id="overallGPA">–</div>
+        <div class="stat-label">Overall GPA</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="classAward">–</div>
+        <div class="stat-label">Class Award</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="totalCredits">0</div>
+        <div class="stat-label">Total Credits</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Grade Record</div>
+      <div id="gradeTableWrap">
+        <p style="color:var(--muted);font-size:0.85rem;">No grades added yet. Add your first module above.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARETO ANALYSIS -->
+  <div id="tab-pareto" class="panel">
+    <div class="section-header">
+      <h2>Pareto Analysis (80/20 Rule)</h2>
+      <p>Identify the 20% of subjects driving 80% of your GPA impact. Focus your effort where it matters most.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">📊 GPA Impact by Subject Area</div>
+      <div id="paretoViz" style="min-height:200px;"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🎯 Your Vital Few (Top 20%)</div>
+        <div id="vitalFew">
+          <p style="color:var(--muted);font-size:0.85rem;">Add grades to see your Vital Few subjects.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📉 Useful Many (Bottom 80%)</div>
+        <div id="usefulMany">
+          <p style="color:var(--muted);font-size:0.85rem;">Add grades to see your Useful Many subjects.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-title">⚡ Study Time Optimizer — Pareto Recommendation</div>
+      <div id="studyOptimizer">
+        <p style="color:var(--muted);font-size:0.85rem;">Add grades to get personalized study time allocations.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10K TRACKER -->
+  <div id="tab-tenk" class="panel">
+    <div class="section-header">
+      <h2>10,000-Hour Mastery Tracker</h2>
+      <p>Track deliberate practice per subject. Research shows ~10,000 hours of focused practice leads to world-class expertise.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">Log Practice Session</div>
+      <div class="grid-2" style="gap:1rem;">
+        <div>
+          <label>Subject / Skill</label>
+          <select id="tenkSubject">
+            <option value="">-- Select Subject --</option>
+            <option>Data Structures & Algorithms</option>
+            <option>Object-Oriented Programming</option>
+            <option>Database Management</option>
+            <option>Operating Systems</option>
+            <option>Computer Networks</option>
+            <option>Software Engineering</option>
+            <option>Machine Learning / AI</option>
+            <option>Web Development</option>
+            <option>Mathematics / Statistics</option>
+            <option>Cryptography & Security</option>
+            <option>Computer Architecture</option>
+            <option>Digital Signal Processing</option>
+          </select>
+        </div>
+        <div>
+          <label>Hours Practiced</label>
+          <input type="number" id="tenkHours" min="0.5" max="12" step="0.5" placeholder="e.g. 2.5">
+        </div>
+        <div>
+          <label>Session Type</label>
+          <select id="tenkType">
+            <option value="deliberate">🎯 Deliberate Practice (counts 2x)</option>
+            <option value="passive">📖 Passive Study (counts 1x)</option>
+            <option value="project">🔨 Project Work (counts 1.5x)</option>
+          </select>
+        </div>
+        <div>
+          <label>Notes (optional)</label>
+          <input type="text" id="tenkNotes" placeholder="What did you practice?">
+        </div>
+      </div>
+      <div class="mt-2">
+        <button class="btn btn-primary" onclick="logHours()">Log Session</button>
+      </div>
+    </div>
+
+    <div id="tenkList">
+      <p style="color:var(--muted);font-size:0.85rem;">No sessions logged yet.</p>
+    </div>
+  </div>
+
+  <!-- SMART SCHEDULE -->
+  <div id="tab-schedule" class="panel">
+    <div class="section-header">
+      <h2>Smart Schedule Generator</h2>
+      <p>Generates a personalized weekly study plan using Pareto analysis — allocate more time to high-impact subjects.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:1.5rem;">
+      <div class="card">
+        <div class="card-title">Schedule Preferences</div>
+        <div style="margin-bottom:1rem;">
+          <label>Total Study Hours Per Week</label>
+          <input type="number" id="weeklyHours" value="40" min="10" max="80">
+        </div>
+        <div style="margin-bottom:1rem;">
+          <label>Peak Performance Time</label>
+          <select id="peakTime">
+            <option value="morning">🌅 Morning (6am–12pm)</option>
+            <option value="afternoon">☀️ Afternoon (12pm–6pm)</option>
+            <option value="evening">🌙 Evening (6pm–12am)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary fw" onclick="generateSchedule()">⚡ Generate Pareto Schedule</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Pareto 80/20 — Time Allocation Logic</div>
+        <div class="insight insight-info">
+          <div class="insight-title">How it works</div>
+          Subjects where you score lowest get 60% of study time (they drag your GPA most). Top subjects get maintenance time. This is the inverse Pareto — fix your weakest 20% to gain 80% of the GPA improvement.
+        </div>
+        <div class="insight insight-good">
+          <div class="insight-title">10K Integration</div>
+          Sessions are scheduled as deliberate practice blocks — the type that counts most toward mastery. Short, focused, spaced repetition beats marathon passive reading.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Weekly Study Plan</div>
+      <div id="scheduleOutput">
+        <p style="color:var(--muted);font-size:0.85rem;">Click "Generate Pareto Schedule" above to create your personalized plan.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ==================== DATA ====================
+const MODULES = {
+  Y1: [
+    { code:'SCS 1301', title:'Data Structures & Program Design in C', credits:4, area:'Programming' },
+    { code:'SCS 1302', title:'Discrete Mathematics', credits:2, area:'Mathematics' },
+    { code:'SCS 1303', title:'Introduction to Software Engineering', credits:2, area:'SE' },
+    { code:'SCS 1304', title:'Problem Solving & Computation Approaches', credits:2, area:'Theory' },
+    { code:'SCS 1305', title:'Computer Systems', credits:2, area:'Systems' },
+    { code:'SCS 1306', title:'Linear Algebra', credits:2, area:'Mathematics' },
+    { code:'SCS 1307', title:'Probability & Statistics', credits:2, area:'Mathematics' },
+    { code:'SCS 1308', title:'Foundations of Algorithms', credits:4, area:'Theory' },
+    { code:'SCS 1309', title:'Database Management Systems', credits:4, area:'Databases' },
+    { code:'SCS 1310', title:'Object Oriented Modelling & Programming', credits:3, area:'Programming' },
+    { code:'SCS 1311', title:'Internet & Web Technologies', credits:3, area:'Web' },
+    { code:'SCS 1312', title:'Operating System Concepts', credits:3, area:'Systems' },
+    { code:'ENH 1301', title:'Application Laboratory', credits:1, area:'Enhancement' },
+    { code:'ENH 1302', title:'Communication Skills', credits:1, area:'Enhancement' },
+    { code:'ENH 1303', title:'Aesthetic Studies', credits:1, area:'Enhancement' },
+  ],
+  Y2: [
+    { code:'SCS 2301', title:'Group Project', credits:1, area:'Project' },
+    { code:'SCS 2302', title:'Calculus', credits:2, area:'Mathematics' },
+    { code:'SCS 2303', title:'Software Architectures', credits:2, area:'SE' },
+    { code:'SCS 2304', title:'Advanced Algorithms', credits:3, area:'Theory' },
+    { code:'SCS 2306', title:'Computer Networks', credits:3, area:'Networks' },
+    { code:'SCS 2307', title:'IT Project Management', credits:2, area:'Management' },
+    { code:'SCS 2308', title:'Numerical Methods', credits:2, area:'Mathematics' },
+    { code:'SCS 2309', title:'Statistical Inference', credits:2, area:'Mathematics' },
+    { code:'SCS 2310', title:'Digital Signal Processing', credits:2, area:'DSP' },
+    { code:'SCS 2311', title:'Cryptography & Information Security', credits:6, area:'Security' },
+    { code:'SCS 2312', title:'Computational Models & PL Concepts', credits:4, area:'Theory' },
+    { code:'SCS 2313', title:'Computer System Architecture', credits:2, area:'Systems' },
+    { code:'SCS 2314', title:'Middleware Architecture', credits:2, area:'Systems' },
+    { code:'SCS 2315', title:'Electronics & Physical Computing', credits:3, area:'Hardware' },
+    { code:'ENH 2301', title:'Entrepreneurship', credits:2, area:'Enhancement' },
+  ],
+  Y3: [
+    { code:'SCS 3301', title:'Industry Project', credits:4, area:'Project' },
+    { code:'SCS 3307', title:'Data Warehousing & Mining', credits:3, area:'Data Science' },
+    { code:'SCS 3308', title:'Machine Learning', credits:3, area:'AI/ML' },
+    { code:'SCS 3309', title:'Human-Computer Interaction', credits:3, area:'HCI' },
+    { code:'SCS 3310', title:'System & Network Administration', credits:3, area:'Networks' },
+    { code:'SCS 3311', title:'Mobile Application Development', credits:3, area:'Mobile' },
+    { code:'SCS 3312', title:'Compiler Theory & Construction', credits:4, area:'Theory' },
+    { code:'SCS 3313', title:'Intelligent Systems', credits:2, area:'AI/ML' },
+    { code:'SCS 3314', title:'Robotics & Cognitive Systems', credits:3, area:'Robotics' },
+    { code:'SCS 3315', title:'Digital Forensics', credits:3, area:'Security' },
+    { code:'SCS 3316', title:'Research Methods', credits:2, area:'Research' },
+    { code:'SCS 3317', title:'Computer Graphics & Image Processing', credits:3, area:'Graphics' },
+    { code:'ENH 3301', title:'Professional Skills', credits:2, area:'Enhancement' },
+  ],
+  Y4: [
+    { code:'SCS 4301', title:'Research Project / Dissertation', credits:6, area:'Project' },
+    { code:'SCS 4302', title:'Distributed Systems', credits:3, area:'Systems' },
+    { code:'SCS 4303', title:'Cloud Computing', credits:3, area:'Cloud' },
+    { code:'SCS 4304', title:'Deep Learning', credits:3, area:'AI/ML' },
+    { code:'SCS 4305', title:'Software Quality Assurance', credits:2, area:'SE' },
+    { code:'SCS 4306', title:'Advanced Database Systems', credits:3, area:'Databases' },
+    { code:'SCS 4307', title:'Natural Language Processing', credits:3, area:'AI/ML' },
+    { code:'SCS 4308', title:'Computer Vision', credits:3, area:'AI/ML' },
+  ]
+};
+
+const GPV = {
+  'A+':4.00,'A':4.00,'A-':3.70,'B+':3.30,'B':3.00,'B-':2.70,
+  'C+':2.30,'C':2.00,'C-':1.70,'D+':1.30,'D':1.00,'E':0.00,'F':0.00
+};
+
+let grades = JSON.parse(localStorage.getItem('ucsc_grades') || '[]');
+let tenkData = JSON.parse(localStorage.getItem('ucsc_tenk') || '{}');
+let profile = JSON.parse(localStorage.getItem('ucsc_profile') || '{"name":"","degree":"CS","year":"1","sem":"1"}');
+
+// ==================== INIT ====================
+function init() {
+  document.getElementById('studentName').value = profile.name || '';
+  document.getElementById('degreeSelect').value = profile.degree || 'CS';
+  document.getElementById('yearSelect').value = profile.year || '1';
+  document.getElementById('semSelect').value = profile.sem || '1';
+  updateModuleList();
+  updateAll();
+}
+
+function saveProfile() {
+  profile = {
+    name: document.getElementById('studentName').value,
+    degree: document.getElementById('degreeSelect').value,
+    year: document.getElementById('yearSelect').value,
+    sem: document.getElementById('semSelect').value,
+  };
+  localStorage.setItem('ucsc_profile', JSON.stringify(profile));
+  updateAll();
+}
+
+function updateModuleList() {
+  const sel = document.getElementById('moduleSelect');
+  if(!sel) return;
+  sel.innerHTML = '';
+  ['Y1','Y2','Y3','Y4'].forEach(y => {
+    const group = document.createElement('optgroup');
+    group.label = 'Year ' + y[1];
+    MODULES[y].forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.code + '|' + m.title + '|' + m.credits + '|' + m.area;
+      opt.textContent = m.code + ' — ' + m.title;
+      group.appendChild(opt);
+    });
+    sel.appendChild(group);
+  });
+}
+
+// ==================== GPA ====================
+function addGrade() {
+  const modSel = document.getElementById('moduleSelect').value;
+  if(!modSel) { showToast('Please select a module'); return; }
+  const [code, title, credits, area] = modSel.split('|');
+  const gpv = parseFloat(document.getElementById('gradeSelect').value);
+  const cr = parseInt(document.getElementById('creditSelect').value) || parseInt(credits);
+  const ys = document.getElementById('modYearSem').value;
+
+  // Check duplicate
+  if(grades.find(g => g.code === code)) {
+    if(!confirm(code + ' already added. Replace?')) return;
+    grades = grades.filter(g => g.code !== code);
+  }
+
+  grades.push({ code, title, credits: cr, gpv, area, ys });
+  localStorage.setItem('ucsc_grades', JSON.stringify(grades));
+  updateAll();
+  showToast('✅ ' + code + ' added!');
+}
+
+function clearAllGrades() {
+  if(confirm('Clear all grades?')) {
+    grades = [];
+    localStorage.setItem('ucsc_grades', JSON.stringify(grades));
+    updateAll();
+  }
+}
+
+function calcGPA(gradeArr) {
+  if(!gradeArr.length) return null;
+  const totalWeighted = gradeArr.reduce((s,g) => s + g.gpv * g.credits, 0);
+  const totalCredits = gradeArr.reduce((s,g) => s + g.credits, 0);
+  return totalCredits > 0 ? totalWeighted / totalCredits : null;
+}
+
+function getClass(gpa) {
+  if(gpa === null) return '–';
+  if(gpa >= 3.70) return '1st Class';
+  if(gpa >= 3.30) return '2nd Upper';
+  if(gpa >= 3.00) return '2nd Lower';
+  if(gpa >= 2.00) return 'Pass';
+  return 'Fail';
+}
+
+function getGradeLetter(gpv) {
+  if(gpv>=4.00) return 'A';
+  if(gpv>=3.70) return 'A-';
+  if(gpv>=3.30) return 'B+';
+  if(gpv>=3.00) return 'B';
+  if(gpv>=2.70) return 'B-';
+  if(gpv>=2.30) return 'C+';
+  if(gpv>=2.00) return 'C';
+  if(gpv>=1.70) return 'C-';
+  if(gpv>=1.30) return 'D+';
+  if(gpv>=1.00) return 'D';
+  return 'E';
+}
+
+function getGradeClass(gpv) {
+  if(gpv>=3.70) return 'grade-A';
+  if(gpv>=2.70) return 'grade-B';
+  if(gpv>=1.70) return 'grade-C';
+  if(gpv>=1.00) return 'grade-D';
+  return 'grade-E';
+}
+
+// ==================== RENDER MODULES ====================
+function renderGradeTable() {
+  const wrap = document.getElementById('gradeTableWrap');
+  if(!grades.length) {
+    wrap.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;">No grades added yet.</p>';
+    return;
+  }
+  let html = `<table><thead><tr>
+    <th>Code</th><th>Module</th><th>Area</th><th>Credits</th><th>Grade</th><th>GPV</th><th></th>
+  </tr></thead><tbody>`;
+  grades.forEach((g,i) => {
+    html += `<tr>
+      <td style="font-family:'Space Mono',monospace;font-size:0.78rem;">${g.code}</td>
+      <td>${g.title}</td>
+      <td><span class="chip chip-purple">${g.area}</span></td>
+      <td>${g.credits}</td>
+      <td><span class="grade-badge ${getGradeClass(g.gpv)}">${getGradeLetter(g.gpv)}</span></td>
+      <td style="font-family:'Space Mono',monospace;">${g.gpv.toFixed(2)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeGrade(${i})">×</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+
+  const gpa = calcGPA(grades);
+  const totalCr = grades.reduce((s,g)=>s+g.credits,0);
+  document.getElementById('overallGPA').textContent = gpa ? gpa.toFixed(2) : '–';
+  document.getElementById('classAward').textContent = getClass(gpa);
+  document.getElementById('totalCredits').textContent = totalCr;
+}
+
+function removeGrade(i) {
+  grades.splice(i,1);
+  localStorage.setItem('ucsc_grades', JSON.stringify(grades));
+  updateAll();
+  showToast('Grade removed');
+}
+
+// ==================== PARETO ====================
+function renderPareto() {
+  if(!grades.length) return;
+
+  // Group by area, calc weighted impact
+  const areaMap = {};
+  grades.forEach(g => {
+    if(!areaMap[g.area]) areaMap[g.area] = { totalGPV: 0, totalCr: 0, count: 0 };
+    areaMap[g.area].totalGPV += g.gpv * g.credits;
+    areaMap[g.area].totalCr += g.credits;
+    areaMap[g.area].count++;
+  });
+
+  const areas = Object.entries(areaMap).map(([area, d]) => ({
+    area,
+    avgGPV: d.totalGPV / d.totalCr,
+    credits: d.totalCr,
+    impact: d.totalGPV,
+  })).sort((a,b) => b.impact - a.impact);
+
+  const totalImpact = areas.reduce((s,a) => s + a.impact, 0);
+  let cumulative = 0;
+  areas.forEach(a => {
+    cumulative += a.impact;
+    a.cumPct = cumulative / totalImpact * 100;
+    a.pct = a.impact / totalImpact * 100;
+  });
+
+  // Pareto 20%
+  const topN = Math.max(1, Math.ceil(areas.length * 0.2));
+  
+  // Bar chart
+  const maxImpact = areas[0].impact;
+  let barsHtml = `<div style="margin-bottom:0.5rem;font-size:0.72rem;color:var(--muted);font-family:'Space Mono',monospace;">GPA Impact Score per Subject Area</div>
+    <div class="bar-wrap">`;
+  areas.forEach((a, idx) => {
+    const h = Math.max(8, (a.impact / maxImpact) * 160);
+    const isTop = idx < topN;
+    barsHtml += `<div class="bar-item">
+      <div class="bar-pct">${a.pct.toFixed(0)}%</div>
+      <div class="bar-rect ${isTop?'pareto-20':''}" style="height:${h}px" title="${a.area}: ${a.avgGPV.toFixed(2)} avg GPV"></div>
+      <div class="bar-label">${a.area.length>8?a.area.substring(0,7)+'…':a.area}</div>
+    </div>`;
+  });
+  barsHtml += `</div>
+    <div style="margin-top:0.75rem;font-size:0.75rem;color:var(--muted);font-family:'Space Mono',monospace;">
+      <span style="color:var(--accent2);">■</span> Top 20% (Vital Few) &nbsp;
+      <span style="color:var(--accent);">■</span> Bottom 80% (Useful Many)
+    </div>`;
+  document.getElementById('paretoViz').innerHTML = barsHtml;
+
+  // Vital Few
+  const vital = areas.slice(0, topN);
+  const vitalImpact = vital.reduce((s,a)=>s+a.impact,0)/totalImpact*100;
+  let vfHtml = `<div class="insight insight-good">
+    <div class="insight-title">⚡ These ${topN} area(s) drive ${vitalImpact.toFixed(0)}% of your GPA</div>
+    <div style="font-size:0.82rem;margin-top:0.5rem;">Maintain or grow these to protect your class standing.</div>
+  </div>`;
+  vital.forEach(a => {
+    vfHtml += `<div style="padding:0.75rem;border-radius:8px;background:var(--surface);margin-top:0.5rem;border:1px solid var(--border);">
+      <div class="flex-between">
+        <span style="font-weight:700;">${a.area}</span>
+        <span class="chip chip-green">${a.avgGPV.toFixed(2)} GPV</span>
+      </div>
+      <div style="margin-top:0.4rem;"><div class="prog-wrap"><div class="prog-bar good" style="width:${a.pct/areas[0].pct*100}%"></div></div></div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;font-family:'Space Mono',monospace;">${a.credits} credits · ${a.pct.toFixed(1)}% of GPA impact</div>
+    </div>`;
+  });
+  document.getElementById('vitalFew').innerHTML = vfHtml;
+
+  // Useful Many
+  const many = areas.slice(topN);
+  if(!many.length) {
+    document.getElementById('usefulMany').innerHTML = '<p style="color:var(--muted);font-size:0.85rem;">Add more grades across different areas to see this analysis.</p>';
+  } else {
+    let umHtml = `<div class="insight insight-warn">
+      <div class="insight-title">🎯 Focus here for biggest GPA gains</div>
+      <div style="font-size:0.82rem;margin-top:0.5rem;">These areas have lower impact scores — improving them gives the highest ROI on study time.</div>
+    </div>`;
+    many.forEach(a => {
+      umHtml += `<div style="padding:0.75rem;border-radius:8px;background:var(--surface);margin-top:0.5rem;border:1px solid var(--border);">
+        <div class="flex-between">
+          <span style="font-weight:700;">${a.area}</span>
+          <span class="chip ${a.avgGPV>=3?'chip-purple':a.avgGPV>=2?'chip-amber':'chip-red'}">${a.avgGPV.toFixed(2)} GPV</span>
+        </div>
+        <div style="margin-top:0.4rem;"><div class="prog-wrap"><div class="prog-bar warn" style="width:${a.pct/areas[0].pct*100}%"></div></div></div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.3rem;font-family:'Space Mono',monospace;">${a.credits} credits · Opportunity to boost GPA</div>
+      </div>`;
+    });
+    document.getElementById('usefulMany').innerHTML = umHtml;
+  }
+
+  // Study Optimizer
+  const weekHours = parseInt(document.getElementById('weeklyHours')?.value) || 40;
+  let soHtml = '';
+  // Inverse Pareto: allocate based on weakness
+  const weakAreas = [...areas].sort((a,b) => a.avgGPV - b.avgGPV);
+  const totalCreditsSum = areas.reduce((s,a)=>s+a.credits,0);
+  soHtml += `<div class="insight insight-info"><div class="insight-title">Pareto Time Allocation Formula</div>
+    Based on ${weekHours}h/week: 60% to weakest areas, 40% to maintenance. Adjust in Schedule tab.
+  </div>`;
+  weakAreas.forEach((a, i) => {
+    const weight = Math.max(0.1, (4 - a.avgGPV) / weakAreas.length * 2);
+    const pct = weight / weakAreas.reduce((s,x)=>s+Math.max(0.1,(4-x.avgGPV)/weakAreas.length*2),0) * 100;
+    const hrs = (pct/100*weekHours).toFixed(1);
+    soHtml += `<div class="hour-track" style="margin-top:1rem;">
+      <div class="hour-header">
+        <span class="hour-subject">${a.area}</span>
+        <span class="hour-count">${hrs}h / week</span>
+      </div>
+      <div class="prog-wrap"><div class="prog-bar ${a.avgGPV<2.5?'warn':''}" style="width:${pct}%"></div></div>
+    </div>`;
+  });
+  document.getElementById('studyOptimizer').innerHTML = soHtml;
+}
+
+// ==================== 10K TRACKER ====================
+function logHours() {
+  const subject = document.getElementById('tenkSubject').value;
+  const hrs = parseFloat(document.getElementById('tenkHours').value);
+  const type = document.getElementById('tenkType').value;
+  const notes = document.getElementById('tenkNotes').value;
+
+  if(!subject) { showToast('Select a subject'); return; }
+  if(!hrs || hrs<=0) { showToast('Enter valid hours'); return; }
+
+  const multiplier = { deliberate:2, passive:1, project:1.5 }[type];
+  const effective = hrs * multiplier;
+
+  if(!tenkData[subject]) tenkData[subject] = { total:0, effective:0, sessions:[] };
+  tenkData[subject].total += hrs;
+  tenkData[subject].effective += effective;
+  tenkData[subject].sessions.push({ hrs, type, notes, date: new Date().toLocaleDateString(), effective });
+  
+  localStorage.setItem('ucsc_tenk', JSON.stringify(tenkData));
+  document.getElementById('tenkHours').value = '';
+  document.getElementById('tenkNotes').value = '';
+  updateAll();
+  showToast(`🔥 +${hrs}h logged (×${multiplier} = ${effective}h effective)`);
+}
+
+function renderTenK() {
+  const list = document.getElementById('tenkList');
+  const subjects = Object.keys(tenkData);
+  if(!subjects.length) {
+    list.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;">No sessions logged yet.</p>';
+    return;
+  }
+
+  const MILESTONES = [100, 500, 1000, 2500, 5000, 7500, 10000];
+  let html = '';
+  subjects.forEach(s => {
+    const d = tenkData[s];
+    const eff = d.effective;
+    const pct = Math.min(100, eff/10000*100);
+    const nextMilestone = MILESTONES.find(m => m > eff) || 10000;
+    const toNext = nextMilestone - eff;
+    html += `<div class="card" style="margin-bottom:1rem;">
+      <div class="hour-header">
+        <span class="hour-subject">${s}</span>
+        <span class="hour-count">${eff.toFixed(1)}h effective / 10,000h</span>
+      </div>
+      <div style="margin:0.75rem 0;">
+        <div class="prog-wrap" style="height:12px;"><div class="prog-bar" style="width:${pct}%"></div></div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.35rem;font-family:'Space Mono',monospace;">
+          ${pct.toFixed(1)}% complete · ${toNext.toFixed(0)}h to next milestone (${nextMilestone}h)
+        </div>
+      </div>`;
+
+    // Milestone badges
+    MILESTONES.slice(0,4).forEach(m => {
+      if(eff >= m) {
+        html += `<div class="milestone achieved"><span class="milestone-icon">🏆</span> ${m}h milestone achieved!</div>`;
+      }
+    });
+
+    // Last 3 sessions
+    if(d.sessions.length) {
+      html += `<div style="margin-top:1rem;"><div class="card-title">Recent Sessions</div>`;
+      d.sessions.slice(-3).reverse().forEach(sess => {
+        const typeLabel = {deliberate:'🎯 Deliberate',passive:'📖 Passive',project:'🔨 Project'}[sess.type];
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border);font-size:0.82rem;">
+          <span>${typeLabel} · ${sess.hrs}h</span>
+          <span style="color:var(--accent2);font-family:'Space Mono',monospace;">+${sess.effective}h effective</span>
+          <span style="color:var(--muted);font-size:0.75rem;">${sess.date}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+    html += '</div>';
+  });
+  list.innerHTML = html;
+}
+
+// ==================== SCHEDULE ====================
+function generateSchedule() {
+  const weekHours = parseInt(document.getElementById('weeklyHours').value) || 40;
+  const peak = document.getElementById('peakTime').value;
+
+  // Use grade data for priority
+  const areaMap = {};
+  grades.forEach(g => {
+    if(!areaMap[g.area]) areaMap[g.area] = { gpv: g.gpv, credits: g.credits };
+  });
+
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const timeSlots = {
+    morning: ['6:00 AM','8:00 AM','10:00 AM'],
+    afternoon: ['12:00 PM','2:00 PM','4:00 PM'],
+    evening: ['6:00 PM','8:00 PM','10:00 PM']
+  };
+
+  // Assign subjects per day using weak areas first
+  const sortedAreas = Object.entries(areaMap).sort((a,b) => a[1].gpv - b[1].gpv).map(e=>e[0]);
+  const allSubjects = sortedAreas.length ? sortedAreas : 
+    ['Data Structures & Algorithms','Database Management','Computer Networks','Mathematics','Software Engineering','Operating Systems','Programming'];
+
+  const peakSlots = timeSlots[peak];
+  const dailyHours = (weekHours / 5).toFixed(1);
+
+  let html = `<div style="margin-bottom:1rem;" class="insight insight-info">
+    <div class="insight-title">Pareto-Optimized Schedule · ${weekHours}h/week</div>
+    Weak subjects scheduled during your peak time (${peak}). Strongest subjects during off-peak.
+  </div>`;
+
+  html += '<div class="grid-2">';
+  days.slice(0,6).forEach((day, di) => {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.5rem;">
+      <div style="font-weight:800;margin-bottom:0.75rem;">${day}</div>`;
+    
+    const slots = di < 5 ? peakSlots : timeSlots[peak === 'morning' ? 'evening' : 'morning'];
+    slots.forEach((time, si) => {
+      const subject = allSubjects[(di * 3 + si) % allSubjects.length];
+      const isFocus = si === 0;
+      html += `<div class="schedule-slot ${isFocus?'focused':''}">
+        <div class="slot-time">${time} · ${isFocus?'2h Focus':'1.5h Study'}</div>
+        <div class="slot-subject">${subject}</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:0.2rem;">${isFocus?'🎯 Deliberate Practice':'📖 Review & Problems'}</div>
+      </div>`;
+    });
+
+    html += `<div style="font-size:0.75rem;color:var(--accent2);margin-top:0.5rem;font-family:'Space Mono',monospace;">~${dailyHours}h total</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  html += `<div class="insight insight-good mt-2">
+    <div class="insight-title">💡 10K Rule Integration</div>
+    Each 2-hour "deliberate practice" block = 4 effective hours toward 10K mastery. 
+    Across ${weekHours}h/week with deliberate sessions → you'll hit 1,000h milestone in ${(1000/(weekHours*0.5)).toFixed(0)} weeks.
+  </div>`;
+
+  document.getElementById('scheduleOutput').innerHTML = html;
+  showToast('✅ Schedule generated!');
+}
+
+// ==================== DASHBOARD ====================
+function updateDashboard() {
+  const gpa = calcGPA(grades);
+  const totalHoursEff = Object.values(tenkData).reduce((s,d) => s+d.effective, 0);
+  const totalCr = grades.reduce((s,g) => s+g.credits, 0);
+
+  document.getElementById('dashGPA').textContent = gpa ? gpa.toFixed(2) : '–';
+  document.getElementById('dashHours').textContent = totalHoursEff.toFixed(0);
+  document.getElementById('dashCredits').textContent = totalCr;
+  document.getElementById('gpaVal').textContent = gpa ? gpa.toFixed(2) : '–';
+
+  if(gpa) {
+    const pct = Math.min(100, gpa/3.70*100);
+    document.getElementById('gpaBar').style.width = pct + '%';
+  }
+
+  // 10K mini list
+  const subjects = Object.keys(tenkData);
+  let tenkHtml = '';
+  if(!subjects.length) {
+    tenkHtml = '<p style="color:var(--muted);font-size:0.82rem;">Log practice sessions in the 10K Tracker tab.</p>';
+  } else {
+    subjects.slice(0,4).forEach(s => {
+      const eff = tenkData[s].effective;
+      const pct = Math.min(100, eff/10000*100);
+      tenkHtml += `<div class="hour-track">
+        <div class="hour-header">
+          <span style="font-size:0.82rem;font-weight:700;">${s.length>25?s.substring(0,24)+'…':s}</span>
+          <span class="hour-count">${eff.toFixed(0)}h</span>
+        </div>
+        <div class="prog-wrap"><div class="prog-bar" style="width:${pct}%"></div></div>
+      </div>`;
+    });
+  }
+  document.getElementById('tenkDashList').innerHTML = tenkHtml;
+
+  // Insights
+  let insightsHtml = '';
+  const name = profile.name ? profile.name.split(' ')[0] : 'You';
+
+  if(!grades.length) {
+    insightsHtml += `<div class="insight insight-info"><div class="insight-title">🚀 Getting Started</div>
+      Head to the <strong>Modules & GPA</strong> tab and add your current grades to unlock Pareto analysis and personalized insights.</div>`;
+  } else {
+    if(gpa && gpa >= 3.70) {
+      insightsHtml += `<div class="insight insight-good"><div class="insight-title">🏆 First Class Territory</div>
+        ${name}, your GPA of ${gpa.toFixed(2)} qualifies for First Class Honours. Maintain this performance and protect your weak subjects.</div>`;
+    } else if(gpa && gpa >= 3.30) {
+      insightsHtml += `<div class="insight insight-warn"><div class="insight-title">⚡ Close to First Class</div>
+        You need ${(3.70-gpa).toFixed(2)} more GPA points for First Class. Focus deliberate practice on your 20% weakest subjects.</div>`;
+    }
+
+    const weakGrades = grades.filter(g => g.gpv < 2.70);
+    if(weakGrades.length) {
+      const weakSubjects = weakGrades.slice(0,3).map(g=>g.title.split(' ').slice(0,3).join(' ')).join(', ');
+      insightsHtml += `<div class="insight insight-warn"><div class="insight-title">🎯 Pareto Alert — Fix These First</div>
+        ${weakGrades.length} module(s) below B-: <strong>${weakSubjects}</strong>. These are dragging your GPA most. Per 80/20 rule, improving these gives the biggest return.</div>`;
+    }
+
+    if(totalHoursEff > 500) {
+      insightsHtml += `<div class="insight insight-good"><div class="insight-title">🔥 Mastery in Progress</div>
+        You've logged ${totalHoursEff.toFixed(0)} effective hours. At this rate, you'll hit 10,000h mastery in ${(10000/(totalHoursEff/30)).toFixed(0)} months. Keep it up!</div>`;
+    } else {
+      insightsHtml += `<div class="insight insight-info"><div class="insight-title">💡 10K Rule Tip</div>
+        Start logging practice sessions. 2h of deliberate practice daily = 730h/year. Consistent practice across your degree = 3,000–5,000 effective hours of mastery.</div>`;
+    }
+  }
+
+  document.getElementById('insightsList').innerHTML = insightsHtml || '<p style="color:var(--muted);font-size:0.85rem;">Add data to generate insights.</p>';
+}
+
+// ==================== TABS ====================
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  event.target.classList.add('active');
+  updateAll();
+}
+
+function updateAll() {
+  updateDashboard();
+  renderGradeTable();
+  renderPareto();
+  renderTenK();
+}
+
+// ==================== TOAST ====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ==================== START ====================
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
