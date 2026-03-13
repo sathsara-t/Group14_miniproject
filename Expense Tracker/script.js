@@ -24,20 +24,13 @@ const categoryColors = {
 
 // DOM Elements
 const els = {
-    // Secions
-    welcomeSection: document.getElementById('welcomeSection'),
-    getStartedBtn: document.getElementById('getStartedBtn'),
+    // Nav
+    // Sections
     allowanceSection: document.getElementById('allowanceSection'),
     dashboard: document.getElementById('dashboard'),
-    navHome: document.getElementById('navHome'),
-    navDashboard: document.getElementById('navDashboard'),
 
     // Header
     monthLabel: document.getElementById('monthLabel'),
-    resetBtn: document.getElementById('resetAllBtn'),
-    importDataBtn: document.getElementById('importDataBtn'),
-    exportDataBtn: document.getElementById('exportDataBtn'),
-    importFileInput: document.getElementById('importFileInput'),
     currentMonthDisplay: document.getElementById('currentMonthDisplay'),
 
     // Allowance Setup
@@ -99,9 +92,13 @@ function init() {
     // Set default date to today
     els.expDate.valueAsDate = new Date();
 
-    // Restore last active section synchronously to prevent flash
-    const lastSection = localStorage.getItem('financeFlow_lastSection') || 'welcome';
-    showSection(lastSection);
+    // Default section mapping bypassing 'welcome'
+    const lastSection = localStorage.getItem('financeFlow_lastSection');
+    if (lastSection === 'dashboard' && allowance > 0) {
+        showSection('dashboard');
+    } else {
+        showSection('allowance');
+    }
 
     // Load data
     loadData();
@@ -119,40 +116,17 @@ function init() {
     els.filterCategory.addEventListener('change', renderTable);
     els.filterDate.addEventListener('change', renderTable);
     els.filterRange.addEventListener('change', renderTable);
-    els.resetBtn.addEventListener('click', resetAll);
-    els.exportDataBtn.addEventListener('click', exportDataJSON);
     els.exportBtn.addEventListener('click', exportCSV);
 
-    // Nav Listeners
-    els.navHome.addEventListener('click', (e) => {
-        e.preventDefault();
-        showSection('welcome');
-    });
-
-    els.navDashboard.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (allowance > 0) {
-            showSection('dashboard');
-        } else {
-            showSection('allowance');
+    // Listen for data updates from parent window (Mastery Optimizer)
+    window.addEventListener('message', (event) => {
+        if (event.data && event.data.action === 'reloadData') {
+            loadData().then(() => {
+                updateDashboard();
+                showToast('Data synced with Mastery Optimizer');
+            });
         }
     });
-
-    // Import listeners
-    els.importDataBtn.addEventListener('click', () => els.importFileInput.click());
-    els.importFileInput.addEventListener('change', importDataJSON);
-
-    // Welcome Screen listeners
-    if (els.getStartedBtn) {
-        els.getStartedBtn.addEventListener('click', () => {
-            if (allowance > 0) {
-                showSection('dashboard');
-            } else {
-                showSection('allowance');
-                els.allowanceInput.focus();
-            }
-        });
-    }
 
     // Modal listeners
     els.cancelDeleteBtn.addEventListener('click', closeDeleteModal);
@@ -162,36 +136,25 @@ function init() {
 // ========== UI NAVIGATION ==========
 function showSection(sectionName) {
     // Hide all
-    els.welcomeSection.classList.add('hidden');
-    els.allowanceSection.classList.add('hidden');
-    els.dashboard.classList.remove('active');
-    els.dashboard.classList.add('hidden');
+    if (els.allowanceSection) els.allowanceSection.classList.add('hidden');
+    if (els.dashboard) {
+        els.dashboard.classList.remove('active');
+        els.dashboard.classList.add('hidden');
+    }
 
-    // Update nav links
-    els.navHome.classList.remove('active');
-    els.navDashboard.classList.remove('active');
-
-    if (sectionName === 'welcome') {
-        els.welcomeSection.classList.remove('hidden');
-        els.navHome.classList.add('active');
-    } else if (sectionName === 'allowance') {
-        els.allowanceSection.classList.remove('hidden');
-        els.navDashboard.classList.add('active');
+    if (sectionName === 'allowance') {
+        if (els.allowanceSection) els.allowanceSection.classList.remove('hidden');
     } else if (sectionName === 'dashboard') {
-        els.dashboard.classList.remove('hidden');
-        els.dashboard.classList.add('active');
-        els.navDashboard.classList.add('active');
+        if (els.dashboard) {
+            els.dashboard.classList.remove('hidden');
+            els.dashboard.classList.add('active');
+        }
         updateDashboard();
     }
 
-    // Toggle header actions visibility
     const headerRight = document.querySelector('.header-right');
     if (headerRight) {
-        if (sectionName === 'welcome') {
-            headerRight.style.display = 'none';
-        } else {
-            headerRight.style.display = 'flex';
-        }
+        headerRight.style.display = 'flex';
     }
 
     // Save current section to localStorage
@@ -210,8 +173,9 @@ async function loadData() {
         expenses = data.expenses || [];
         expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        // UI already handled in init(), but check if we need to update based on data
-        if (localStorage.getItem('financeFlow_lastSection') === 'dashboard' && allowance <= 0) {
+        if (allowance > 0) {
+            showSection('dashboard');
+        } else {
             showSection('allowance');
         }
     } catch (error) {
@@ -229,7 +193,11 @@ async function loadData() {
             expenses.sort((a, b) => new Date(b.date) - new Date(a.date));
         }
 
-        // UI already handled in init()
+        if (allowance > 0) {
+            showSection('dashboard');
+        } else {
+            showSection('allowance');
+        }
     }
 }
 
@@ -336,24 +304,8 @@ async function confirmDelete() {
     }
 }
 
-async function resetAll() {
-    if (confirm('Are you sure you want to delete ALL data? This cannot be undone.')) {
-        // Server sync
-        try {
-            await fetch(`${API_URL}/reset`, { method: 'POST' });
-        } catch (e) { console.error('Server sync failed'); }
-
-        // Backup local clear
-        localStorage.removeItem('financeFlow_allowance');
-        localStorage.removeItem('financeFlow_expenses');
-
-        allowance = 0;
-        expenses = [];
-        showSection('welcome');
-        els.allowanceInput.value = '';
-        showToast('All data reset.');
-    }
-}
+// Removed promptDelete, closeDeleteModal, confirmDelete, resetAll
+// ... well, let's keep delete functions for single expenses
 
 // ========== UI UPDATES ==========
 function formatCurrency(num) {
@@ -663,73 +615,7 @@ function exportCSV() {
     document.body.removeChild(a);
 }
 
-function exportDataJSON() {
-    const data = {
-        allowance: allowance,
-        expenses: expenses,
-        exportDate: new Date().toISOString()
-    };
-
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.setAttribute('hidden', '');
-    a.setAttribute('href', url);
-    a.setAttribute('download', 'financeFlow_data.json');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    showToast('Data exported successfully! 💾');
-}
-
-function importDataJSON(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        try {
-            const data = JSON.parse(e.target.result);
-
-            if (data.allowance !== undefined && Array.isArray(data.expenses)) {
-                allowance = parseFloat(data.allowance);
-                expenses = data.expenses;
-
-                // Sync to server
-                fetch(`${API_URL}/data`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ allowance, expenses })
-                }).catch(err => console.error('Server sync failed: ', err));
-
-                // Fallback
-                localStorage.setItem('financeFlow_allowance', allowance.toString());
-                localStorage.setItem('financeFlow_expenses', JSON.stringify(expenses));
-
-                showToast('Data imported successfully! 📥');
-
-                // Refresh UI
-                if (allowance > 0) {
-                    showSection('dashboard');
-                } else {
-                    showSection('allowance');
-                }
-            } else {
-                showToast('Invalid backup file format.', 'error');
-            }
-        } catch (err) {
-            showToast('Error reading the backup file.', 'error');
-            console.error(err);
-        }
-    };
-    reader.readAsText(file);
-
-    // Reset input so the same file can be selected again if needed
-    event.target.value = '';
-}
+// Removed generic exportDataJSON and importDataJSON
 
 // Start
 document.addEventListener('DOMContentLoaded', init);
