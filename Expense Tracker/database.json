@@ -1,0 +1,12 @@
+{
+  "allowance": 25000,
+  "expenses": [
+    {
+      "id": "1773157343762",
+      "date": "2026-03-10",
+      "desc": "Dinner",
+      "amount": 500,
+      "category": "Food & Dining"
+    }
+  ]
+}

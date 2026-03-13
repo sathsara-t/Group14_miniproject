@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceFlow – Student Budget Tracker</title>
+  <meta name="description"
+    content="Track your monthly allowance and daily expenses with FinanceFlow – the smart personal finance tracker for students." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+  <!-- ========== HEADER ========== -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">💸</div>
+        <div class="logo-text">
+          <span class="logo-title">FinanceFlow</span>
+          <span class="logo-sub">Student Budget Tracker</span>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <a href="#" class="nav-link active" id="navHome">Home</a>
+        <a href="#" class="nav-link" id="navDashboard">Dashboard</a>
+      </nav>
+      <div class="header-right" style="display: none;">
+        <div class="current-month" id="currentMonthDisplay"></div>
+        <button class="btn-reset" id="resetAllBtn" title="Reset all data">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+          Reset
+        </button>
+        <button class="btn-import-json" id="importDataBtn" title="Load saved data">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          Load
+        </button>
+        <input type="file" id="importFileInput" accept=".json" style="display: none;" />
+        <button class="btn-export-json" id="exportDataBtn" title="Save data locally">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Save
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========== WELCOME SCREEN ========== -->
+  <section class="welcome-section hidden" id="welcomeSection">
+    <div class="container welcome-container">
+      <div class="welcome-content">
+        <div class="welcome-badge">🚀 Welcome to FinanceFlow</div>
+        <h1 class="welcome-title">Master Your Money, <br><span>Shape Your Future.</span></h1>
+        <p class="welcome-text">
+          FinanceFlow is the ultimate student budget tracker designed to help you organize expenses, 
+          save more, and achieve your financial goals with ease.
+        </p>
+        
+        <div class="welcome-features">
+          <div class="feature-item">
+            <div class="feature-icon">📊</div>
+            <div class="feature-info">
+              <h4>Smart Analytics</h4>
+              <p>Visual breakdown of your spending habits.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-info">
+              <h4>Budget Goals</h4>
+              <p>Set limits and stay on track every month.</p>
+            </div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-info">
+              <h4>Local Privacy</h4>
+              <p>Your data stays on your device, secure and private.</p>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary btn-large" id="getStartedBtn">
+          Get Started 
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="welcome-visual">
+        <div class="glass-mockup">
+          <div class="mockup-header">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot green"></div>
+          </div>
+          <div class="mockup-body">
+            <div class="mockup-line long"></div>
+            <div class="mockup-line med"></div>
+            <div class="mockup-grid">
+              <div class="mockup-box"></div>
+              <div class="mockup-box"></div>
+            </div>
+            <div class="mockup-chart"></div>
+          </div>
+        </div>
+        <div class="visual-orb"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HERO / ALLOWANCE SETUP ========== -->
+  <section class="allowance-section hidden" id="allowanceSection">
+    <div class="container">
+      <div class="allowance-card glass-card">
+        <div class="allowance-header">
+          <h2>Monthly Allowance Setup</h2>
+          <p>Set your total budget for <span id="monthLabel"></span></p>
+        </div>
+        <div class="allowance-input-row">
+          <div class="currency-badge">LKR</div>
+          <input type="number" id="allowanceInput" class="allowance-input" placeholder="e.g. 15000" min="0"
+            step="100" />
+          <button class="btn-primary" id="setAllowanceBtn">Set Budget</button>
+        </div>
+        <div class="quick-amounts">
+          <span class="quick-label">Quick set:</span>
+          <button class="quick-btn" onclick="quickSet(5000)">5,000</button>
+          <button class="quick-btn" onclick="quickSet(10000)">10,000</button>
+          <button class="quick-btn" onclick="quickSet(15000)">15,000</button>
+          <button class="quick-btn" onclick="quickSet(25000)">25,000</button>
+          <button class="quick-btn" onclick="quickSet(50000)">50,000</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== MAIN DASHBOARD ========== -->
+  <main class="dashboard hidden" id="dashboard">
+    <div class="container">
+
+      <!-- STAT CARDS -->
+      <div class="stats-grid">
+        <div class="stat-card glass-card stat-allowance">
+          <div class="stat-icon">💰</div>
+          <div class="stat-info">
+            <span class="stat-label">Total Allowance</span>
+            <span class="stat-value" id="statAllowance">LKR 0</span>
+          </div>
+          <button class="stat-edit-btn" id="editAllowanceBtn" title="Edit allowance">✏️</button>
+        </div>
+
+        <div class="stat-card glass-card stat-spent">
+          <div class="stat-icon">💸</div>
+          <div class="stat-info">
+            <span class="stat-label">Total Spent</span>
+            <span class="stat-value" id="statSpent">LKR 0</span>
+          </div>
+        </div>
+
+        <div class="stat-card glass-card stat-remaining">
+          <div class="stat-icon">🏦</div>
+          <div class="stat-info">
+            <span class="stat-label">Remaining</span>
+            <span class="stat-value" id="statRemaining">LKR 0</span>
+          </div>
+        </div>
+
+        <div class="stat-card glass-card stat-daily">
+          <div class="stat-icon">📅</div>
+          <div class="stat-info">
+            <span class="stat-label">Daily Budget Left</span>
+            <span class="stat-value" id="statDaily">LKR 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRESS BAR -->
+      <div class="progress-section glass-card">
+        <div class="progress-header">
+          <span class="progress-title">Remaining Budget</span>
+          <span class="progress-pct" id="progressPct">100%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-labels">
+          <span>LKR 0</span>
+          <span id="progressMax">LKR 0</span>
+        </div>
+        <div class="budget-status" id="budgetStatus"></div>
+      </div>
+
+      <!-- TWO COLUMN: ADD EXPENSE + CATEGORY BREAKDOWN -->
+      <div class="two-col">
+
+        <!-- ADD EXPENSE -->
+        <div class="expense-form glass-card">
+          <h3 class="card-title">➕ Add Expense</h3>
+          <div class="form-group">
+            <label for="expDate">Date</label>
+            <input type="date" id="expDate" />
+          </div>
+          <div class="form-group">
+            <label for="expDesc">Description</label>
+            <input type="text" id="expDesc" placeholder="e.g. Lunch, Bus fare…" maxlength="60" />
+          </div>
+          <div class="form-group">
+            <label for="expAmount">Amount (LKR)</label>
+            <input type="number" id="expAmount" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label for="expCategory">Category</label>
+            <select id="expCategory">
+              <option value="Food & Dining">🍔 Food & Dining</option>
+              <option value="Transport">🚌 Transport</option>
+              <option value="Education">📚 Education</option>
+              <option value="Entertainment">🎮 Entertainment</option>
+              <option value="Health">💊 Health</option>
+              <option value="Shopping">🛍️ Shopping</option>
+              <option value="Utilities">💡 Utilities</option>
+              <option value="Savings">🐷 Savings</option>
+              <option value="Other">📦 Other</option>
+            </select>
+          </div>
+          <button class="btn-primary btn-full" id="addExpenseBtn">Add Expense</button>
+          <div class="form-msg" id="formMsg"></div>
+        </div>
+
+        <!-- CATEGORY DOUGHNUT CHART -->
+        <div class="chart-card glass-card">
+          <h3 class="card-title">📊 Spending by Category</h3>
+          <div class="chart-wrap">
+            <canvas id="categoryChart"></canvas>
+            <div class="chart-empty" id="categoryChartEmpty">No expenses yet</div>
+          </div>
+          <div class="legend-list" id="legendList"></div>
+        </div>
+
+      </div>
+
+      <!-- DAILY SPENDING LINE CHART -->
+      <div class="glass-card chart-full">
+        <h3 class="card-title">📈 Daily Spending This Month</h3>
+        <div class="line-chart-wrap">
+          <canvas id="dailyChart"></canvas>
+        </div>
+      </div>
+
+      <!-- EXPENSE TABLE -->
+      <div class="expense-table-card glass-card">
+        <div class="table-header">
+          <h3 class="card-title">🧾 Expense Log</h3>
+          <div class="table-controls">
+            <input type="text" id="searchInput" placeholder="Search expenses…" class="search-input" />
+            <input type="date" id="filterDate" class="filter-date" title="Filter by date" />
+            <select id="filterCategory" class="filter-select">
+              <option value="all">All Categories</option>
+              <option value="Food & Dining">🍔 Food & Dining</option>
+              <option value="Transport">🚌 Transport</option>
+              <option value="Education">📚 Education</option>
+              <option value="Entertainment">🎮 Entertainment</option>
+              <option value="Health">💊 Health</option>
+              <option value="Shopping">🛍️ Shopping</option>
+              <option value="Utilities">💡 Utilities</option>
+              <option value="Savings">🐷 Savings</option>
+              <option value="Other">📦 Other</option>
+            </select>
+            <select id="filterRange" class="filter-select">
+              <option value="all">All Time</option>
+              <option value="7days">Last 7 Days</option>
+              <option value="lastMonth">Last Month</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table class="expense-table" id="expenseTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="expenseBody">
+            </tbody>
+          </table>
+          <div class="table-empty" id="tableEmpty">No expenses recorded yet. Add your first expense! 🎉</div>
+        </div>
+        <div class="table-footer">
+          <span id="recordCount">0 records</span>
+          <button class="btn-export" id="exportBtn">⬇ Export CSV</button>
+        </div>
+      </div>
+
+    </div><!-- /container -->
+  </main>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <span>💸 FinanceFlow – Smart Budgeting for Students</span>
+      <span class="footer-note">Data stored locally in your browser</span>
+    </div>
+  </footer>
+
+  <!-- ========== TOAST NOTIFICATION ========== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ========== DELETE CONFIRM MODAL ========== -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal-box glass-card">
+      <div class="modal-icon">🗑️</div>
+      <h3>Delete Expense?</h3>
+      <p>This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="cancelDeleteBtn">Cancel</button>
+        <button class="btn-danger" id="confirmDeleteBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
