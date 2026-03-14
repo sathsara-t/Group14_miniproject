@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1566,8 +1567,17 @@
           <div class="grid-3">
             <div>
               <label>Subject / Skill</label>
-              <select id="tenkSubject">
-                <!-- Populated dynamically by updateTenkSubjectList() -->
+              <select>
+                <option>Database Management</option>
+                <option>Operating Systems</option>
+                <option>Computer Networks</option>
+                <option>Software Engineering</option>
+                <option>Machine Learning / AI</option>
+                <option>Web Development</option>
+                <option>Mathematics / Statistics</option>
+                <option>Cryptography & Security</option>
+                <option>Computer Architecture</option>
+                <option>Digital Signal Processing</option>
               </select>
             </div>
             <div>
@@ -1647,420 +1657,11 @@
         </div>
       </div>
 
-      <!-- EXPENSE TRACKER (Inline FinanceFlow) -->
-      <div id="tab-expense" class="panel">
-
-        <!-- ===== INLINE FINANCEFLOW STYLES ===== -->
-        <style>
-          /* ---- Scoped to #tab-expense ---- */
-          #tab-expense .ff-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;
-          }
-          #tab-expense .ff-logo { display: flex; align-items: center; gap: 0.6rem; }
-          #tab-expense .ff-logo-icon { font-size: 1.6rem; }
-          #tab-expense .ff-logo-title { font-size: 1.2rem; font-weight: 800; font-family: var(--font-heading); }
-          #tab-expense .ff-logo-sub { font-size: 0.7rem; color: var(--text-muted); display: block; }
-          #tab-expense .ff-month-badge {
-            font-size: 0.75rem; color: var(--text-muted);
-            background: rgba(255,255,255,0.05); padding: 0.3rem 0.75rem;
-            border-radius: 20px; border: 1px solid var(--border);
-          }
-
-          /* Allowance Setup */
-          #tab-expense .ff-allowance-card {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: var(--radius-md); padding: 2rem; max-width: 540px; margin: 2rem auto;
-          }
-          #tab-expense .ff-allowance-card h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 0.25rem; }
-          #tab-expense .ff-allowance-card p { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem; }
-          #tab-expense .ff-input-row { display: flex; gap: 0.5rem; align-items: center; }
-          #tab-expense .ff-currency { font-size: 0.75rem; font-weight: 700; color: var(--text-muted);
-            background: rgba(255,255,255,0.06); padding: 0.6rem 0.75rem; border-radius: 8px;
-            border: 1px solid var(--border); }
-          #tab-expense .ff-allowance-input {
-            flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-            color: #fff; padding: 0.65rem 1rem; border-radius: 8px; font-size: 1rem;
-            outline: none; transition: border-color .2s;
-          }
-          #tab-expense .ff-allowance-input:focus { border-color: var(--primary); }
-          #tab-expense .ff-quick-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; align-items: center; }
-          #tab-expense .ff-quick-label { font-size: 0.72rem; color: var(--text-muted); }
-          #tab-expense .ff-quick-btn {
-            font-size: 0.75rem; padding: 0.35rem 0.75rem; border-radius: 20px;
-            background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3);
-            color: var(--primary); cursor: pointer; transition: all .2s;
-          }
-          #tab-expense .ff-quick-btn:hover { background: rgba(139,92,246,0.25); }
-
-          /* Stats Grid */
-          #tab-expense .ff-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.25rem; }
-          @media(max-width:900px){ #tab-expense .ff-stats { grid-template-columns: repeat(2,1fr); } }
-          @media(max-width:500px){ #tab-expense .ff-stats { grid-template-columns: 1fr 1fr; } }
-          #tab-expense .ff-stat {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: var(--radius-sm); padding: 1rem 1.1rem;
-            display: flex; align-items: center; gap: 0.75rem; position: relative;
-          }
-          #tab-expense .ff-stat-icon { font-size: 1.5rem; }
-          #tab-expense .ff-stat-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.1rem; }
-          #tab-expense .ff-stat-value { font-size: 1rem; font-weight: 700; }
-          #tab-expense .ff-edit-btn {
-            position: absolute; top: 0.5rem; right: 0.5rem;
-            background: none; border: none; cursor: pointer; font-size: 0.8rem; opacity: 0.5;
-          }
-          #tab-expense .ff-edit-btn:hover { opacity: 1; }
-
-          /* Progress */
-          #tab-expense .ff-progress {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: var(--radius-sm); padding: 1rem 1.25rem; margin-bottom: 1.25rem;
-          }
-          #tab-expense .ff-progress-head { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.82rem; }
-          #tab-expense .ff-progress-title { font-weight: 600; }
-          #tab-expense .ff-progress-pct { font-family: 'Space Mono', monospace; color: var(--accent); }
-          #tab-expense .ff-track {
-            height: 8px; background: rgba(255,255,255,0.06); border-radius: 10px; overflow: hidden; margin-bottom: 0.4rem;
-          }
-          #tab-expense .ff-fill {
-            height: 100%; border-radius: 10px; background: var(--accent); transition: width .6s ease, background .3s;
-          }
-          #tab-expense .ff-fill.warn { background: var(--warning); }
-          #tab-expense .ff-fill.danger { background: var(--danger); }
-          #tab-expense .ff-progress-labels { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); }
-          #tab-expense .ff-status { font-size: 0.8rem; margin-top: 0.4rem; }
-
-          /* Two-col layout */
-          #tab-expense .ff-two-col {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;
-          }
-          @media(max-width:800px){ #tab-expense .ff-two-col { grid-template-columns: 1fr; } }
-
-          /* Form card */
-          #tab-expense .ff-form-card {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: var(--radius-sm); padding: 1.25rem;
-          }
-          #tab-expense .ff-form-card h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; }
-          #tab-expense .ff-form-group { margin-bottom: 0.85rem; }
-          #tab-expense .ff-form-group label { display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.3rem; font-weight: 500; }
-          #tab-expense .ff-form-group input,
-          #tab-expense .ff-form-group select {
-            width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-            color: #fff; padding: 0.6rem 0.85rem; border-radius: 8px; font-size: 0.85rem; outline: none;
-          }
-          #tab-expense .ff-form-group input:focus,
-          #tab-expense .ff-form-group select:focus { border-color: var(--primary); }
-          #tab-expense .ff-form-group select option { background: #1e1b4b; }
-          #tab-expense .ff-btn-full {
-            width: 100%; padding: 0.7rem; border-radius: 8px;
-            background: var(--primary); color: #fff; border: none; cursor: pointer;
-            font-size: 0.875rem; font-weight: 600; transition: background .2s;
-          }
-          #tab-expense .ff-btn-full:hover { background: var(--primary-hover); }
-          #tab-expense .ff-form-msg { font-size: 0.78rem; margin-top: 0.5rem; min-height: 1.2em; }
-          #tab-expense .ff-form-msg.error { color: var(--danger); }
-
-          /* Chart card */
-          #tab-expense .ff-chart-card {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: var(--radius-sm); padding: 1.25rem;
-          }
-          #tab-expense .ff-chart-card h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; }
-          #tab-expense .ff-chart-wrap { position: relative; height: 200px; }
-          #tab-expense .ff-chart-empty {
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-            color: var(--text-muted); font-size: 0.82rem;
-          }
-          #tab-expense .ff-legend { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-          #tab-expense .ff-legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; }
-          #tab-expense .ff-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-          /* Daily chart */
-          #tab-expense .ff-daily-card {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: var(--radius-sm); padding: 1.25rem; margin-bottom: 1.25rem;
-          }
-          #tab-expense .ff-daily-card h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem; }
-          #tab-expense .ff-line-wrap { height: 180px; }
-
-          /* Table */
-          #tab-expense .ff-table-card {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: var(--radius-sm); padding: 1.25rem;
-          }
-          #tab-expense .ff-table-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
-          #tab-expense .ff-table-head h3 { font-size: 0.9rem; font-weight: 700; margin: 0; }
-          #tab-expense .ff-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-          #tab-expense .ff-search,
-          #tab-expense .ff-filter-date,
-          #tab-expense .ff-filter-sel {
-            background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-            color: #fff; padding: 0.45rem 0.75rem; border-radius: 8px; font-size: 0.78rem; outline: none;
-          }
-          #tab-expense .ff-search { width: 150px; }
-          #tab-expense .ff-filter-sel option { background: #1e1b4b; }
-          #tab-expense .ff-table-scroll { overflow-x: auto; }
-          #tab-expense .ff-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-          #tab-expense .ff-table th {
-            text-align: left; padding: 0.6rem 0.75rem; font-size: 0.7rem; font-weight: 600;
-            color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
-            border-bottom: 1px solid var(--border);
-          }
-          #tab-expense .ff-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
-          #tab-expense .ff-table tr:last-child td { border-bottom: none; }
-          #tab-expense .ff-table tr:hover td { background: rgba(255,255,255,0.02); }
-          #tab-expense .ff-badge {
-            display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px;
-            font-size: 0.7rem; font-weight: 500;
-          }
-          #tab-expense .ff-amt { font-weight: 600; font-family: 'Space Mono', monospace; font-size: 0.8rem; }
-          #tab-expense .ff-del-btn { background: none; border: none; cursor: pointer; font-size: 0.9rem; opacity: 0.5; transition: opacity .2s; }
-          #tab-expense .ff-del-btn:hover { opacity: 1; }
-          #tab-expense .ff-table-empty { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.85rem; }
-          #tab-expense .ff-table-footer {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);
-            font-size: 0.78rem; color: var(--text-muted);
-          }
-          #tab-expense .ff-export-btn {
-            font-size: 0.75rem; padding: 0.4rem 0.9rem; border-radius: 20px;
-            background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3);
-            color: var(--accent); cursor: pointer; transition: all .2s;
-          }
-          #tab-expense .ff-export-btn:hover { background: rgba(16,185,129,0.25); }
-
-          /* Delete confirm modal inside tab */
-          #tab-expense .ff-modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-            z-index: 9999; align-items: center; justify-content: center;
-          }
-          #tab-expense .ff-modal-overlay.active { display: flex; }
-          #tab-expense .ff-modal-box {
-            background: #1e1b4b; border: 1px solid var(--border); border-radius: var(--radius-md);
-            padding: 2rem; text-align: center; max-width: 340px; width: 90%;
-          }
-          #tab-expense .ff-modal-box h3 { margin: 0.75rem 0 0.4rem; font-size: 1.1rem; }
-          #tab-expense .ff-modal-box p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem; }
-          #tab-expense .ff-modal-actions { display: flex; gap: 0.75rem; justify-content: center; }
-          #tab-expense .ff-modal-cancel {
-            padding: 0.55rem 1.4rem; border-radius: 8px; background: rgba(255,255,255,0.06);
-            border: 1px solid var(--border); color: #fff; cursor: pointer;
-          }
-          #tab-expense .ff-modal-confirm {
-            padding: 0.55rem 1.4rem; border-radius: 8px; background: var(--danger);
-            border: none; color: #fff; cursor: pointer; font-weight: 600;
-          }
-          #tab-expense .ff-hidden { display: none !important; }
-
-          /* Toast (scoped) */
-          #ff-toast {
-            position: fixed; bottom: 2rem; right: 2rem; padding: 0.75rem 1.25rem;
-            border-radius: 10px; background: #1e293b; border: 1px solid var(--border);
-            color: #fff; font-size: 0.85rem; z-index: 99999;
-            opacity: 0; transform: translateY(10px); transition: all .3s; pointer-events: none;
-          }
-          #ff-toast.show { opacity: 1; transform: translateY(0); }
-          #ff-toast.error { border-color: var(--danger); color: var(--danger); }
-        </style>
-
-        <!-- ===== FINANCEFLOW MARKUP ===== -->
-
-        <!-- Header row -->
-        <div class="ff-header">
-          <div class="ff-logo">
-            <span class="ff-logo-icon">💸</span>
-            <div>
-              <span class="ff-logo-title">FinanceFlow</span>
-              <span class="ff-logo-sub">Student Budget Tracker</span>
-            </div>
-          </div>
-          <span class="ff-month-badge" id="ffMonthBadge"></span>
-        </div>
-
-        <!-- Allowance Setup (shown when no budget set) -->
-        <div id="ffAllowanceSection" class="ff-hidden">
-          <div class="ff-allowance-card">
-            <h2>Monthly Allowance Setup</h2>
-            <p>Set your total budget for <span id="ffMonthLabel"></span></p>
-            <div class="ff-input-row">
-              <span class="ff-currency">LKR</span>
-              <input type="number" id="ffAllowanceInput" class="ff-allowance-input" placeholder="e.g. 15000" min="0" step="100" />
-              <button class="btn btn-primary btn-sm" onclick="ffSaveAllowance(document.getElementById('ffAllowanceInput').value)">Set Budget</button>
-            </div>
-            <div class="ff-quick-row">
-              <span class="ff-quick-label">Quick set:</span>
-              <button class="ff-quick-btn" onclick="ffSaveAllowance(5000)">5,000</button>
-              <button class="ff-quick-btn" onclick="ffSaveAllowance(10000)">10,000</button>
-              <button class="ff-quick-btn" onclick="ffSaveAllowance(15000)">15,000</button>
-              <button class="ff-quick-btn" onclick="ffSaveAllowance(25000)">25,000</button>
-              <button class="ff-quick-btn" onclick="ffSaveAllowance(50000)">50,000</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dashboard (shown when budget is set) -->
-        <div id="ffDashboard" class="ff-hidden">
-
-          <!-- Stats -->
-          <div class="ff-stats">
-            <div class="ff-stat">
-              <span class="ff-stat-icon">💰</span>
-              <div>
-                <div class="ff-stat-label">Total Allowance</div>
-                <div class="ff-stat-value" id="ffStatAllowance">LKR 0</div>
-              </div>
-              <button class="ff-edit-btn" onclick="ffShowAllowance()" title="Edit budget">✏️</button>
-            </div>
-            <div class="ff-stat">
-              <span class="ff-stat-icon">💸</span>
-              <div>
-                <div class="ff-stat-label">Total Spent</div>
-                <div class="ff-stat-value" id="ffStatSpent">LKR 0</div>
-              </div>
-            </div>
-            <div class="ff-stat">
-              <span class="ff-stat-icon">🏦</span>
-              <div>
-                <div class="ff-stat-label">Remaining</div>
-                <div class="ff-stat-value" id="ffStatRemaining">LKR 0</div>
-              </div>
-            </div>
-            <div class="ff-stat">
-              <span class="ff-stat-icon">📅</span>
-              <div>
-                <div class="ff-stat-label">Daily Budget Left</div>
-                <div class="ff-stat-value" id="ffStatDaily">LKR 0</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Progress bar -->
-          <div class="ff-progress">
-            <div class="ff-progress-head">
-              <span class="ff-progress-title">Remaining Budget</span>
-              <span class="ff-progress-pct" id="ffProgressPct">100%</span>
-            </div>
-            <div class="ff-track"><div class="ff-fill" id="ffProgressFill"></div></div>
-            <div class="ff-progress-labels"><span>LKR 0</span><span id="ffProgressMax">LKR 0</span></div>
-            <div class="ff-status" id="ffBudgetStatus"></div>
-          </div>
-
-          <!-- Two-col: Form + Chart -->
-          <div class="ff-two-col">
-
-            <!-- Add Expense Form -->
-            <div class="ff-form-card">
-              <h3>➕ Add Expense</h3>
-              <div class="ff-form-group">
-                <label>Date</label>
-                <input type="date" id="ffExpDate" />
-              </div>
-              <div class="ff-form-group">
-                <label>Description</label>
-                <input type="text" id="ffExpDesc" placeholder="e.g. Lunch, Bus fare…" maxlength="60" />
-              </div>
-              <div class="ff-form-group">
-                <label>Amount (LKR)</label>
-                <input type="number" id="ffExpAmount" placeholder="0.00" min="0" step="0.01" />
-              </div>
-              <div class="ff-form-group">
-                <label>Category</label>
-                <select id="ffExpCategory">
-                  <option value="Food & Dining">🍔 Food & Dining</option>
-                  <option value="Transport">🚌 Transport</option>
-                  <option value="Education">📚 Education</option>
-                  <option value="Entertainment">🎮 Entertainment</option>
-                  <option value="Health">💊 Health</option>
-                  <option value="Shopping">🛍️ Shopping</option>
-                  <option value="Utilities">💡 Utilities</option>
-                  <option value="Savings">🐷 Savings</option>
-                  <option value="Other">📦 Other</option>
-                </select>
-              </div>
-              <button class="ff-btn-full" onclick="ffAddExpense()">Add Expense</button>
-              <div class="ff-form-msg" id="ffFormMsg"></div>
-            </div>
-
-            <!-- Category Doughnut -->
-            <div class="ff-chart-card">
-              <h3>📊 Spending by Category</h3>
-              <div class="ff-chart-wrap">
-                <canvas id="ffCategoryChart"></canvas>
-                <div class="ff-chart-empty" id="ffCategoryEmpty">No expenses yet</div>
-              </div>
-              <div class="ff-legend" id="ffLegend"></div>
-            </div>
-
-          </div><!-- /two-col -->
-
-          <!-- Daily Line Chart -->
-          <div class="ff-daily-card">
-            <h3>📈 Daily Spending This Month</h3>
-            <div class="ff-line-wrap">
-              <canvas id="ffDailyChart"></canvas>
-            </div>
-          </div>
-
-          <!-- Expense Table -->
-          <div class="ff-table-card">
-            <div class="ff-table-head">
-              <h3>🧾 Expense Log</h3>
-              <div class="ff-controls">
-                <input type="text" id="ffSearch" class="ff-search" placeholder="Search…" oninput="ffRenderTable()" />
-                <input type="date" id="ffFilterDate" class="ff-filter-date" onchange="ffRenderTable()" />
-                <select id="ffFilterCat" class="ff-filter-sel" onchange="ffRenderTable()">
-                  <option value="all">All Categories</option>
-                  <option value="Food & Dining">🍔 Food & Dining</option>
-                  <option value="Transport">🚌 Transport</option>
-                  <option value="Education">📚 Education</option>
-                  <option value="Entertainment">🎮 Entertainment</option>
-                  <option value="Health">💊 Health</option>
-                  <option value="Shopping">🛍️ Shopping</option>
-                  <option value="Utilities">💡 Utilities</option>
-                  <option value="Savings">🐷 Savings</option>
-                  <option value="Other">📦 Other</option>
-                </select>
-                <select id="ffFilterRange" class="ff-filter-sel" onchange="ffRenderTable()">
-                  <option value="all">All Time</option>
-                  <option value="7days">Last 7 Days</option>
-                  <option value="lastMonth">Last Month</option>
-                </select>
-              </div>
-            </div>
-            <div class="ff-table-scroll">
-              <table class="ff-table" id="ffTable">
-                <thead>
-                  <tr>
-                    <th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="ffTableBody"></tbody>
-              </table>
-              <div class="ff-table-empty ff-hidden" id="ffTableEmpty">No expenses recorded yet. Add your first expense! 🎉</div>
-            </div>
-            <div class="ff-table-footer">
-              <span id="ffRecordCount">0 records</span>
-              <button class="ff-export-btn" onclick="ffExportCSV()">⬇ Export CSV</button>
-            </div>
-          </div>
-
-        </div><!-- /ffDashboard -->
-
-        <!-- Delete confirm modal -->
-        <div class="ff-modal-overlay" id="ffDeleteModal">
-          <div class="ff-modal-box">
-            <div style="font-size:2rem;">🗑️</div>
-            <h3>Delete Expense?</h3>
-            <p>This action cannot be undone.</p>
-            <div class="ff-modal-actions">
-              <button class="ff-modal-cancel" onclick="ffCloseDeleteModal()">Cancel</button>
-              <button class="ff-modal-confirm" onclick="ffConfirmDelete()">Delete</button>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /tab-expense -->
+      <!-- EXPENSE TRACKER -->
+      <div id="tab-expense" class="panel" style="height: 80vh; padding: 0;">
+        <iframe id="expenseFrame" src="../Expense Tracker/index.html"
+          style="width: 100%; height: 100%; border: none; border-radius: 12px; background: var(--bg);"></iframe>
+      </div>
 
     </main>
   </div> <!-- end .app-container -->
@@ -2080,7 +1681,7 @@
         <div class="grid-2" style="gap: 1rem;">
           <div>
             <label>Degree Programme</label>
-            <select id="degreeSelect" onchange="updateModuleList(); updateTenkSubjectList();">
+            <select id="degreeSelect" onchange="updateModuleList()">
               <option value="CS">BSc. in Computer Science</option>
               <option value="CS_HONS">BSc. (Hons) in Computer Science</option>
               <option value="SE_HONS">BSc. (Hons) in Software Engineering</option>
@@ -2113,418 +1714,16 @@
     </div>
   </div>
 
-  <!-- Mastery Optimizer Toast -->
   <div id="toast"></div>
 
-  <!-- Chart.js for FinanceFlow -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
-  <!-- FinanceFlow inline JS -->
-  <script>
-    // ========== FINANCEFLOW STATE ==========
-    const FF_API = 'http://localhost:3000/api';
-    let ffAllowance = 0;
-    let ffExpenses = [];
-    let ffDeleteTarget = null;
-    let ffCatChart = null;
-    let ffDailyChart = null;
-
-    const FF_COLORS = {
-      'Food & Dining': '#f59e0b',
-      'Transport': '#3b82f6',
-      'Education': '#8b5cf6',
-      'Entertainment': '#ec4899',
-      'Health': '#10b981',
-      'Shopping': '#06b6d4',
-      'Utilities': '#f97316',
-      'Savings': '#14b8a6',
-      'Other': '#64748b'
-    };
-
-    // ========== INIT ==========
-    function ffInit() {
-      const now = new Date();
-      const monthStr = now.toLocaleString('default', { month: 'long', year: 'numeric' });
-      const el1 = document.getElementById('ffMonthBadge');
-      const el2 = document.getElementById('ffMonthLabel');
-      if (el1) el1.textContent = monthStr;
-      if (el2) el2.textContent = monthStr;
-
-      // Set today's date
-      const dateInput = document.getElementById('ffExpDate');
-      if (dateInput) dateInput.valueAsDate = new Date();
-
-      ffLoadData();
-    }
-
-    async function ffLoadData() {
-      try {
-        const res = await fetch(`${FF_API}/data`);
-        if (!res.ok) throw new Error('Backend down');
-        const data = await res.json();
-        ffAllowance = data.allowance || 0;
-        ffExpenses = (data.expenses || []).sort((a, b) => new Date(b.date) - new Date(a.date));
-      } catch {
-        const sa = localStorage.getItem('financeFlow_allowance');
-        const se = localStorage.getItem('financeFlow_expenses');
-        ffAllowance = sa ? parseFloat(sa) : 0;
-        ffExpenses = se ? JSON.parse(se).sort((a, b) => new Date(b.date) - new Date(a.date)) : [];
-      }
-      ffAllowance > 0 ? ffShowDash() : ffShowAllowance();
-    }
-
-    function ffShowAllowance() {
-      document.getElementById('ffAllowanceSection').classList.remove('ff-hidden');
-      document.getElementById('ffDashboard').classList.add('ff-hidden');
-    }
-
-    function ffShowDash() {
-      document.getElementById('ffAllowanceSection').classList.add('ff-hidden');
-      document.getElementById('ffDashboard').classList.remove('ff-hidden');
-      ffUpdateDash();
-    }
-
-    async function ffSaveAllowance(val) {
-      const amt = parseFloat(val);
-      if (isNaN(amt) || amt <= 0) { ffToast('Please enter a valid amount', 'error'); return; }
-      ffAllowance = amt;
-      try {
-        await fetch(`${FF_API}/allowance`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ allowance: ffAllowance })
-        });
-      } catch {}
-      localStorage.setItem('financeFlow_allowance', ffAllowance.toString());
-      ffToast('Budget set! 💰');
-      ffShowDash();
-    }
-
-    async function ffAddExpense() {
-      const date = document.getElementById('ffExpDate').value;
-      const desc = document.getElementById('ffExpDesc').value.trim();
-      const amt = parseFloat(document.getElementById('ffExpAmount').value);
-      const cat = document.getElementById('ffExpCategory').value;
-      const msgEl = document.getElementById('ffFormMsg');
-
-      if (!date || !desc || isNaN(amt) || amt <= 0) {
-        msgEl.textContent = 'Please fill all fields correctly.';
-        msgEl.className = 'ff-form-msg error';
-        setTimeout(() => msgEl.textContent = '', 3000);
-        return;
-      }
-
-      const exp = { id: Date.now().toString(), date, desc, amount: amt, category: cat };
-      ffExpenses.push(exp);
-      ffExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      try {
-        await fetch(`${FF_API}/expenses`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(exp)
-        });
-      } catch {}
-      localStorage.setItem('financeFlow_expenses', JSON.stringify(ffExpenses));
-
-      document.getElementById('ffExpDesc').value = '';
-      document.getElementById('ffExpAmount').value = '';
-      msgEl.textContent = '';
-      ffToast('Expense added! 💸');
-      ffUpdateDash();
-    }
-
-    function ffUpdateDash() {
-      const totalSpent = ffExpenses.reduce((s, e) => s + e.amount, 0);
-      const remaining = ffAllowance - totalSpent;
-      const pctRem = ffAllowance > 0 ? Math.max(0, (remaining / ffAllowance) * 100) : 0;
-      const pctSpent = ffAllowance > 0 ? (totalSpent / ffAllowance) * 100 : 0;
-
-      const today = new Date();
-      const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-      const daysLeft = daysInMonth - today.getDate() + 1;
-      const dailyBudget = remaining > 0 ? remaining / daysLeft : 0;
-
-      document.getElementById('ffStatAllowance').textContent = ffFmt(ffAllowance);
-      document.getElementById('ffStatSpent').textContent = ffFmt(totalSpent);
-      const remEl = document.getElementById('ffStatRemaining');
-      remEl.textContent = ffFmt(remaining);
-      remEl.style.color = remaining < 0 ? 'var(--danger)' : '#fff';
-      document.getElementById('ffStatDaily').textContent = ffFmt(dailyBudget);
-
-      const pct = pctRem.toFixed(1);
-      document.getElementById('ffProgressPct').textContent = pct + '%';
-      document.getElementById('ffProgressMax').textContent = ffFmt(ffAllowance);
-      const fill = document.getElementById('ffProgressFill');
-      fill.style.width = pct + '%';
-      fill.className = 'ff-fill' + (pctRem <= 10 ? ' danger' : pctRem <= 25 ? ' warn' : '');
-
-      const statusEl = document.getElementById('ffBudgetStatus');
-      if (pctSpent >= 100) {
-        statusEl.innerHTML = `⚠️ <span style="color:var(--danger)">Exceeded budget by ${ffFmt(totalSpent - ffAllowance)}!</span>`;
-      } else if (pctSpent >= 80) {
-        statusEl.innerHTML = `🔔 <span style="color:var(--warning)">Careful! Most of your budget is used.</span>`;
-      } else {
-        statusEl.innerHTML = `✅ You're within your budget. Good job!`;
-      }
-
-      ffRenderTable();
-      ffUpdateCharts();
-
-      // Also sync mastery optimizer dashboard mini-widget
-      updateExpenseDashboard();
-    }
-
-    function ffFmt(n) {
-      return 'LKR ' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    // ========== TABLE ==========
-    function ffRenderTable() {
-      const search = (document.getElementById('ffSearch')?.value || '').toLowerCase();
-      const cat = document.getElementById('ffFilterCat')?.value || 'all';
-      const dateVal = document.getElementById('ffFilterDate')?.value || '';
-      const range = document.getElementById('ffFilterRange')?.value || 'all';
-
-      const today = new Date();
-      const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-
-      const filtered = ffExpenses.filter(e => {
-        const matchSearch = e.desc.toLowerCase().includes(search);
-        const matchCat = cat === 'all' || e.category === cat;
-        const matchDate = !dateVal || e.date === dateVal;
-        let matchRange = true;
-        if (range !== 'all') {
-          const ed = new Date(e.date);
-          if (range === '7days') {
-            const d7 = new Date(todayMid); d7.setDate(todayMid.getDate() - 7);
-            matchRange = ed >= d7;
-          } else if (range === 'lastMonth') {
-            const dm = new Date(todayMid); dm.setMonth(todayMid.getMonth() - 1);
-            matchRange = ed >= dm;
-          }
-        }
-        return matchSearch && matchCat && matchDate && matchRange;
-      });
-
-      const tbody = document.getElementById('ffTableBody');
-      const emptyEl = document.getElementById('ffTableEmpty');
-      tbody.innerHTML = '';
-
-      if (filtered.length === 0) {
-        emptyEl.classList.remove('ff-hidden');
-      } else {
-        emptyEl.classList.add('ff-hidden');
-        filtered.forEach(e => {
-          const color = FF_COLORS[e.category] || '#fff';
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${new Date(e.date + 'T00:00:00').toLocaleDateString()}</td>
-            <td>${e.desc}</td>
-            <td><span class="ff-badge" style="color:${color};border:1px solid ${color}">${e.category}</span></td>
-            <td class="ff-amt">${ffFmt(e.amount)}</td>
-            <td><button class="ff-del-btn" onclick="ffPromptDelete('${e.id}')" title="Delete">🗑️</button></td>
-          `;
-          tbody.appendChild(tr);
-        });
-      }
-
-      document.getElementById('ffRecordCount').textContent = `${filtered.length} record(s)`;
-    }
-
-    // ========== CHARTS ==========
-    function ffUpdateCharts() {
-      ffCategoryChart();
-      ffDailyLineChart();
-    }
-
-    function ffCategoryChart() {
-      const catSums = {};
-      ffExpenses.forEach(e => { catSums[e.category] = (catSums[e.category] || 0) + e.amount; });
-      const labels = Object.keys(catSums);
-      const data = Object.values(catSums);
-      const colors = labels.map(l => FF_COLORS[l] || '#cbd5e1');
-      const emptyEl = document.getElementById('ffCategoryEmpty');
-      const legendEl = document.getElementById('ffLegend');
-
-      if (!labels.length) {
-        if (ffCatChart) { ffCatChart.destroy(); ffCatChart = null; }
-        emptyEl.style.display = 'flex';
-        legendEl.innerHTML = '';
-        return;
-      }
-      emptyEl.style.display = 'none';
-      const total = data.reduce((a, b) => a + b, 0);
-      legendEl.innerHTML = labels.map((l, i) => `
-        <div class="ff-legend-item">
-          <div class="ff-legend-dot" style="background:${colors[i]}"></div>
-          <span>${l.replace(/^[^\s]+\s/, '')} (${Math.round(data[i]/total*100)}%)</span>
-        </div>`).join('');
-
-      const ctx = document.getElementById('ffCategoryChart').getContext('2d');
-      if (ffCatChart) {
-        ffCatChart.data.labels = labels;
-        ffCatChart.data.datasets[0].data = data;
-        ffCatChart.data.datasets[0].backgroundColor = colors;
-        ffCatChart.update();
-      } else {
-        ffCatChart = new Chart(ctx, {
-          type: 'doughnut',
-          data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 5 }] },
-          options: {
-            responsive: true, maintainAspectRatio: false, cutout: '70%',
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                backgroundColor: 'rgba(15,23,42,0.9)', padding: 12, cornerRadius: 8,
-                callbacks: { label: ctx => ' ' + ffFmt(ctx.raw) }
-              }
-            }
-          }
-        });
-      }
-    }
-
-    function ffDailyLineChart() {
-      const today = new Date();
-      const yr = today.getFullYear(), mo = today.getMonth();
-      const days = new Date(yr, mo + 1, 0).getDate();
-      const labels = Array.from({ length: days }, (_, i) => i + 1);
-      const daily = new Array(days).fill(0);
-      ffExpenses.forEach(e => {
-        const d = new Date(e.date + 'T00:00:00');
-        if (d.getFullYear() === yr && d.getMonth() === mo) daily[d.getDate() - 1] += e.amount;
-      });
-
-      const ctx = document.getElementById('ffDailyChart').getContext('2d');
-      if (ffDailyChart) {
-        ffDailyChart.data.labels = labels;
-        ffDailyChart.data.datasets[0].data = daily;
-        ffDailyChart.update();
-      } else {
-        const grad = ctx.createLinearGradient(0, 0, 0, 300);
-        grad.addColorStop(0, 'rgba(139,92,246,0.5)');
-        grad.addColorStop(1, 'rgba(139,92,246,0.0)');
-        ffDailyChart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            labels,
-            datasets: [{
-              label: 'Daily Spent', data: daily,
-              borderColor: '#8b5cf6', backgroundColor: grad,
-              borderWidth: 3, fill: true, tension: 0.4,
-              pointBackgroundColor: '#10b981', pointBorderColor: '#fff',
-              pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6
-            }]
-          },
-          options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                backgroundColor: 'rgba(15,23,42,0.9)', padding: 12,
-                callbacks: { label: ctx => ffFmt(ctx.raw) }
-              }
-            },
-            scales: {
-              y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } },
-              x: { grid: { display: false }, border: { display: false } }
-            }
-          }
-        });
-      }
-    }
-
-    // ========== DELETE ==========
-    function ffPromptDelete(id) {
-      ffDeleteTarget = id;
-      document.getElementById('ffDeleteModal').classList.add('active');
-    }
-    function ffCloseDeleteModal() {
-      document.getElementById('ffDeleteModal').classList.remove('active');
-      ffDeleteTarget = null;
-    }
-    async function ffConfirmDelete() {
-      if (!ffDeleteTarget) return;
-      ffExpenses = ffExpenses.filter(e => e.id !== ffDeleteTarget);
-      try { await fetch(`${FF_API}/expenses/${ffDeleteTarget}`, { method: 'DELETE' }); } catch {}
-      localStorage.setItem('financeFlow_expenses', JSON.stringify(ffExpenses));
-      ffToast('Expense deleted');
-      ffUpdateDash();
-      ffCloseDeleteModal();
-    }
-
-    // ========== EXPORT ==========
-    function ffExportCSV() {
-      if (!ffExpenses.length) { ffToast('No data to export', 'error'); return; }
-      let csv = 'Date,Description,Category,Amount\n';
-      ffExpenses.forEach(e => { csv += `"${e.date}","${e.desc.replace(/"/g, '""')}","${e.category}",${e.amount}\n`; });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-      a.download = 'financeFlow_export.csv';
-      a.click();
-    }
-
-    // ========== TOAST ==========
-    function ffToast(msg, type = 'success') {
-      let t = document.getElementById('ff-toast');
-      if (!t) { t = document.createElement('div'); t.id = 'ff-toast'; document.body.appendChild(t); }
-      t.textContent = msg;
-      t.className = `show ${type}`;
-      clearTimeout(t._timer);
-      t._timer = setTimeout(() => t.className = '', 3000);
-    }
-
-    // ========== MASTERY OPTIMIZER INTEGRATION ==========
-    // Called by updateAll() in the mastery optimizer
-    function updateExpenseDashboard() {
-      // This function is called from the parent updateAll() —
-      // if the tab hasn't loaded yet (ffAllowance=0) just skip silently.
-      // The main ffUpdateDash() already handles all the finance UI.
-    }
-
-    // ========== MASTERY OPTIMIZER RESET HOOK ==========
-    // Extend the existing reset to also clear FinanceFlow data
-    const _origResetAll = typeof resetAll === 'function' ? resetAll : null;
-    function resetAll() {
-      if (_origResetAll) _origResetAll();
-      ffAllowance = 0; ffExpenses = [];
-      localStorage.removeItem('financeFlow_allowance');
-      localStorage.removeItem('financeFlow_expenses');
-      if (ffCatChart) { ffCatChart.destroy(); ffCatChart = null; }
-      if (ffDailyChart) { ffDailyChart.destroy(); ffDailyChart = null; }
-      ffShowAllowance();
-    }
-
-    // Init FinanceFlow when the expense tab is first shown
-    document.addEventListener('DOMContentLoaded', () => {
-      ffInit();
-    });
-
-    // Also init when switching to the expense tab (lazy init guard)
-    let _ffInited = false;
-    const _origSwitchTab = typeof switchTab === 'function' ? switchTab : null;
-    // We hook after DOMContentLoaded so switchTab exists
-    document.addEventListener('DOMContentLoaded', () => {
-      // Expose ffPromptDelete globally for inline onclick
-      window.ffPromptDelete = ffPromptDelete;
-      window.ffSaveAllowance = ffSaveAllowance;
-      window.ffAddExpense = ffAddExpense;
-      window.ffRenderTable = ffRenderTable;
-      window.ffExportCSV = ffExportCSV;
-      window.ffCloseDeleteModal = ffCloseDeleteModal;
-      window.ffConfirmDelete = ffConfirmDelete;
-    });
-  </script>
-
-  <!-- Mastery Optimizer Core Script -->
   <script>
     // ==================== DATA ====================
-    // ==================== CS MODULES (BSc CS / BSc Hons CS / BSc Hons SE) ====================
     const MODULES = {
       Y1: [
         { code: 'SCS 1301', title: 'Data Structures & Program Design in C', credits: 4, area: 'Programming' },
         { code: 'SCS 1302', title: 'Discrete Mathematics', credits: 2, area: 'Mathematics' },
         { code: 'SCS 1303', title: 'Introduction to Software Engineering', credits: 2, area: 'SE' },
-        { code: 'SCS 1304', title: 'Problem Solving Strategies & Computation Approaches', credits: 2, area: 'Theory' },
+        { code: 'SCS 1304', title: 'Problem Solving & Computation Approaches', credits: 2, area: 'Theory' },
         { code: 'SCS 1305', title: 'Computer Systems', credits: 2, area: 'Systems' },
         { code: 'SCS 1306', title: 'Linear Algebra', credits: 2, area: 'Mathematics' },
         { code: 'SCS 1307', title: 'Probability & Statistics', credits: 2, area: 'Mathematics' },
@@ -2538,17 +1737,17 @@
         { code: 'ENH 1303', title: 'Aesthetic Studies', credits: 1, area: 'Enhancement' },
       ],
       Y2: [
-        { code: 'SCS 2301', title: 'Group Project', credits: 4, area: 'Project' },
+        { code: 'SCS 2301', title: 'Group Project', credits: 1, area: 'Project' },
         { code: 'SCS 2302', title: 'Calculus', credits: 2, area: 'Mathematics' },
         { code: 'SCS 2303', title: 'Software Architectures', credits: 2, area: 'SE' },
         { code: 'SCS 2304', title: 'Advanced Algorithms', credits: 3, area: 'Theory' },
         { code: 'SCS 2306', title: 'Computer Networks', credits: 3, area: 'Networks' },
-        { code: 'SCS 2307', title: 'Information Technology Project Management', credits: 2, area: 'Management' },
+        { code: 'SCS 2307', title: 'IT Project Management', credits: 2, area: 'Management' },
         { code: 'SCS 2308', title: 'Numerical Methods', credits: 2, area: 'Mathematics' },
         { code: 'SCS 2309', title: 'Statistical Inference', credits: 2, area: 'Mathematics' },
         { code: 'SCS 2310', title: 'Digital Signal Processing', credits: 2, area: 'DSP' },
-        { code: 'SCS 2311', title: 'Cryptography & Information Security', credits: 2, area: 'Security' },
-        { code: 'SCS 2312', title: 'Computational Models & Programming Language Concepts', credits: 4, area: 'Theory' },
+        { code: 'SCS 2311', title: 'Cryptography & Information Security', credits: 6, area: 'Security' },
+        { code: 'SCS 2312', title: 'Computational Models & PL Concepts', credits: 4, area: 'Theory' },
         { code: 'SCS 2313', title: 'Computer System Architecture', credits: 2, area: 'Systems' },
         { code: 'SCS 2314', title: 'Middleware Architecture', credits: 2, area: 'Systems' },
         { code: 'SCS 2315', title: 'Electronics & Physical Computing', credits: 3, area: 'Hardware' },
@@ -2556,128 +1755,28 @@
       ],
       Y3: [
         { code: 'SCS 3301', title: 'Industry Project', credits: 4, area: 'Project' },
-        { code: 'SCS 3302', title: 'Computer Graphics & Image Processing', credits: 3, area: 'Graphics' },
-        { code: 'SCS 3303', title: 'Compiler Theory & Construction', credits: 4, area: 'Theory' },
-        { code: 'SCS 3304', title: 'Intelligent Systems', credits: 2, area: 'AI/ML' },
-        { code: 'SCS 3305', title: 'Robotics & Cognitive Systems', credits: 3, area: 'Robotics' },
-        { code: 'SCS 3306', title: 'Digital Forensics', credits: 3, area: 'Security' },
-        { code: 'SCS 3307', title: 'Data Warehousing & Mining', credits: 2, area: 'Data Science' },
+        { code: 'SCS 3307', title: 'Data Warehousing & Mining', credits: 3, area: 'Data Science' },
         { code: 'SCS 3308', title: 'Machine Learning', credits: 3, area: 'AI/ML' },
         { code: 'SCS 3309', title: 'Human-Computer Interaction', credits: 3, area: 'HCI' },
         { code: 'SCS 3310', title: 'System & Network Administration', credits: 3, area: 'Networks' },
-        { code: 'SCS 3311', title: 'Mobile Application Designing & Development', credits: 3, area: 'Mobile' },
-        { code: 'SCS 3312', title: 'Research Methods', credits: 2, area: 'Research' },
-        { code: 'SCS 3313', title: 'Applied Machine Learning', credits: 3, area: 'AI/ML' },
-        { code: 'SCS 3314', title: 'Database Programming', credits: 3, area: 'Databases' },
-        { code: 'SCS 3315', title: 'Literature Review', credits: 2, area: 'Research' },
-        { code: 'SCS 3316', title: 'Software Quality Assurance', credits: 3, area: 'SE' },
-        { code: 'SCS 3317', title: 'Professional Practice & Behavior', credits: 1, area: 'Enhancement' },
-        { code: 'ENH 3301', title: 'Industry Placement', credits: 8, area: 'Enhancement' },
-        { code: 'ENH 3302', title: 'Business Communication & Soft Skills', credits: 1, area: 'Enhancement' },
+        { code: 'SCS 3311', title: 'Mobile Application Development', credits: 3, area: 'Mobile' },
+        { code: 'SCS 3312', title: 'Compiler Theory & Construction', credits: 4, area: 'Theory' },
+        { code: 'SCS 3313', title: 'Intelligent Systems', credits: 2, area: 'AI/ML' },
+        { code: 'SCS 3314', title: 'Robotics & Cognitive Systems', credits: 3, area: 'Robotics' },
+        { code: 'SCS 3315', title: 'Digital Forensics', credits: 3, area: 'Security' },
+        { code: 'SCS 3316', title: 'Research Methods', credits: 2, area: 'Research' },
+        { code: 'SCS 3317', title: 'Computer Graphics & Image Processing', credits: 3, area: 'Graphics' },
+        { code: 'ENH 3301', title: 'Professional Skills', credits: 2, area: 'Enhancement' },
       ],
       Y4: [
-        { code: 'SCS 4301', title: 'Advanced Operating Systems', credits: 2, area: 'Systems' },
-        { code: 'SCS 4302', title: 'Advanced Computer Networks', credits: 2, area: 'Networks' },
-        { code: 'SCS 4303', title: 'Computer Vision & Deep Learning', credits: 3, area: 'AI/ML' },
-        { code: 'SCS 4304', title: 'Natural Language Processing', credits: 3, area: 'AI/ML' },
-        { code: 'SCS 4305', title: 'Research Seminar', credits: 2, area: 'Research' },
-        { code: 'SCS 4306', title: 'Formal Methods & Software Verification', credits: 2, area: 'SE' },
-        { code: 'SCS 4307', title: 'Computational Biology', credits: 2, area: 'Science' },
-        { code: 'SCS 4308', title: 'Distributed Systems', credits: 2, area: 'Systems' },
-        { code: 'SCS 4309', title: 'Final Year Project in Software Engineering', credits: 8, area: 'Project' },
-        { code: 'SCS 4310', title: 'Final Year Project in Computer Science', credits: 8, area: 'Project' },
-        { code: 'SCS 4311', title: 'Philosophy of Science', credits: 1, area: 'Enhancement' },
-        { code: 'SCS 4312', title: 'Advanced Database Systems', credits: 3, area: 'Databases' },
-        { code: 'SCS 4313', title: 'Advanced Software Engineering', credits: 2, area: 'SE' },
-        { code: 'SCS 4314', title: 'Software Quality & Security Assurance', credits: 2, area: 'SE' },
-        { code: 'SCS 4315', title: 'Embedded Systems', credits: 3, area: 'Hardware' },
-        { code: 'SCS 4316', title: 'Analog, Quantum & Alternative Computing Models', credits: 2, area: 'Theory' },
-        { code: 'SCS 4317', title: 'Game Theory', credits: 2, area: 'Theory' },
-        { code: 'SCS 4318', title: 'Advanced Computer Graphics', credits: 3, area: 'Graphics' },
-        { code: 'SCS 4319', title: 'Enterprise Architectures', credits: 2, area: 'SE' },
-        { code: 'SCS 4320', title: 'Secure Software Engineering', credits: 2, area: 'Security' },
-        { code: 'SCS 4321', title: 'Network Security', credits: 3, area: 'Security' },
-        { code: 'SCS 4322', title: 'Parallel Computing', credits: 2, area: 'Systems' },
-        { code: 'SCS 4323', title: 'Natural Algorithms', credits: 2, area: 'AI/ML' },
-      ]
-    };
-
-    // ==================== IS MODULES (BSc IS / BSc Hons IS) ====================
-    const IS_MODULES = {
-      Y1: [
-        { code: 'IS 1201', title: 'Programming & Problem Solving', credits: 3, area: 'Programming' },
-        { code: 'IS 1202', title: 'Computer Systems', credits: 2, area: 'Systems' },
-        { code: 'IS 1203', title: 'Foundations of Information Systems', credits: 2, area: 'IS Core' },
-        { code: 'IS 1204', title: 'Fundamentals of Software Engineering', credits: 2, area: 'SE' },
-        { code: 'IS 1205', title: 'Introduction to Management', credits: 2, area: 'Management' },
-        { code: 'IS 1206', title: 'Mathematics for Computing', credits: 2, area: 'Mathematics' },
-        { code: 'IS 1207', title: 'Internet & Web Technologies', credits: 3, area: 'Web' },
-        { code: 'IS 1208', title: 'Systems Analysis & Design', credits: 2, area: 'IS Core' },
-        { code: 'IS 1209', title: 'Information Technology Project Management', credits: 2, area: 'Management' },
-        { code: 'IS 1210', title: 'Database Systems', credits: 3, area: 'Databases' },
-        { code: 'IS 1211', title: 'Computer Networks', credits: 3, area: 'Networks' },
-        { code: 'IS 1212', title: 'Probability & Statistics', credits: 3, area: 'Mathematics' },
-        { code: 'IS 1213', title: 'Organizational Behavior', credits: 2, area: 'Management' },
-        { code: 'IS 1214', title: 'Data Structures & Algorithms', credits: 3, area: 'Programming' },
-        { code: 'EN 1201', title: 'Communication Skills', credits: 1, area: 'Enhancement' },
-        { code: 'EN 1202', title: 'Application Laboratory', credits: 1, area: 'Enhancement' },
-        { code: 'EN 1203', title: 'Aesthetic Studies', credits: 1, area: 'Enhancement' },
-      ],
-      Y2: [
-        { code: 'IS 2201', title: 'Group Project', credits: 4, area: 'Project' },
-        { code: 'IS 2202', title: 'Advanced Data Structures & Algorithms', credits: 2, area: 'Programming' },
-        { code: 'IS 2203', title: 'Object Oriented Programming', credits: 3, area: 'Programming' },
-        { code: 'IS 2204', title: 'Information Systems Security', credits: 2, area: 'Security' },
-        { code: 'IS 2205', title: 'Mobile Application Design & Development', credits: 3, area: 'Mobile' },
-        { code: 'IS 2206', title: 'Business Process Management', credits: 3, area: 'Management' },
-        { code: 'IS 2207', title: 'Electronics & Physical Computing', credits: 3, area: 'Hardware' },
-        { code: 'IS 2208', title: 'Information Systems Management & Strategy', credits: 2, area: 'IS Core' },
-        { code: 'IS 2209', title: 'Data Management & Governance', credits: 4, area: 'Databases' },
-        { code: 'IS 2210', title: 'Applied Data Science', credits: 3, area: 'Data Science' },
-        { code: 'IS 2211', title: 'UI/UX Design', credits: 3, area: 'HCI' },
-        { code: 'IS 2212', title: 'Cloud Infrastructure & Applications', credits: 2, area: 'Cloud' },
-        { code: 'EN 2201', title: 'Entrepreneurship', credits: 2, area: 'Enhancement' },
-      ],
-      Y3: [
-        { code: 'IS 3201', title: 'Industry Project', credits: 4, area: 'Project' },
-        { code: 'IS 3202', title: 'Research Methods', credits: 2, area: 'Research' },
-        { code: 'IS 3203', title: 'Cybercrime, Privacy & Legislation', credits: 2, area: 'Security' },
-        { code: 'IS 3204', title: 'Enterprise Resource Planning Systems', credits: 2, area: 'IS Core' },
-        { code: 'IS 3205', title: 'Data Visualization', credits: 3, area: 'Data Science' },
-        { code: 'IS 3206', title: 'Enterprise Architecture', credits: 2, area: 'IS Core' },
-        { code: 'IS 3207', title: 'E-Business & Digital Marketing', credits: 2, area: 'Management' },
-        { code: 'IS 3208', title: 'Middleware Architecture', credits: 3, area: 'Systems' },
-        { code: 'IS 3209', title: 'Systems & Network Administration', credits: 3, area: 'Networks' },
-        { code: 'IS 3210', title: 'Digital Innovation', credits: 2, area: 'IS Core' },
-        { code: 'IS 3211', title: 'Operations Research', credits: 2, area: 'Management' },
-        { code: 'IS 3212', title: 'Robotics & Cognitive Systems', credits: 3, area: 'Robotics' },
-        { code: 'IS 3213', title: 'Literature Survey', credits: 2, area: 'Research' },
-        { code: 'IS 3214', title: 'Professional Practice & Behavior', credits: 1, area: 'Enhancement' },
-        { code: 'IS 3215', title: 'Software Quality Assurance', credits: 3, area: 'SE' },
-        { code: 'IS 3216', title: 'Applied Machine Learning', credits: 3, area: 'AI/ML' },
-        { code: 'IS 3217', title: 'Social Impact of Information Systems & Ethics', credits: 1, area: 'IS Core' },
-        { code: 'IS 3218', title: 'E-Learning Concepts & Technologies', credits: 3, area: 'IS Core' },
-        { code: 'IS 3219', title: 'Information Technology Audit', credits: 2, area: 'IS Core' },
-        { code: 'IS 3220', title: 'Interactive Media Design', credits: 2, area: 'HCI' },
-        { code: 'IS 3221', title: 'Contemporary Topics in Software Development', credits: 2, area: 'SE' },
-        { code: 'EN 3201', title: 'Industrial Placement', credits: 8, area: 'Enhancement' },
-        { code: 'EN 3202', title: 'Business Communication & Soft Skills', credits: 1, area: 'Enhancement' },
-      ],
-      Y4: [
-        { code: 'IS 4201', title: 'Final Year Project in Information Systems', credits: 8, area: 'Project' },
-        { code: 'IS 4202', title: 'Research Seminar', credits: 2, area: 'Research' },
-        { code: 'IS 4203', title: 'Data Analytics', credits: 3, area: 'Data Science' },
-        { code: 'IS 4204', title: 'Software Quality Assurance', credits: 3, area: 'SE' },
-        { code: 'IS 4205', title: 'Machine Learning', credits: 3, area: 'AI/ML' },
-        { code: 'IS 4206', title: 'Advanced Concepts in Software Design & Development', credits: 2, area: 'SE' },
-        { code: 'IS 4207', title: 'Geographical Information Systems', credits: 3, area: 'IS Core' },
-        { code: 'IS 4208', title: 'Natural Language Processing', credits: 3, area: 'AI/ML' },
-        { code: 'IS 4209', title: 'Business Intelligence Systems', credits: 2, area: 'IS Core' },
-        { code: 'IS 4210', title: 'Philosophy of Science & Computational Thinking', credits: 1, area: 'Enhancement' },
-        { code: 'IS 4211', title: 'Contemporary Topics in Information Systems', credits: 2, area: 'IS Core' },
-        { code: 'IS 4212', title: 'Affective Computing', credits: 2, area: 'HCI' },
-        { code: 'IS 4213', title: 'Digital Forensics', credits: 3, area: 'Security' },
-        { code: 'IS 4214', title: 'Bio-Informatics', credits: 2, area: 'Science' },
+        { code: 'SCS 4301', title: 'Research Project / Dissertation', credits: 6, area: 'Project' },
+        { code: 'SCS 4302', title: 'Distributed Systems', credits: 3, area: 'Systems' },
+        { code: 'SCS 4303', title: 'Cloud Computing', credits: 3, area: 'Cloud' },
+        { code: 'SCS 4304', title: 'Deep Learning', credits: 3, area: 'AI/ML' },
+        { code: 'SCS 4305', title: 'Software Quality Assurance', credits: 2, area: 'SE' },
+        { code: 'SCS 4306', title: 'Advanced Database Systems', credits: 3, area: 'Databases' },
+        { code: 'SCS 4307', title: 'Natural Language Processing', credits: 3, area: 'AI/ML' },
+        { code: 'SCS 4308', title: 'Computer Vision', credits: 3, area: 'AI/ML' },
       ]
     };
 
@@ -2695,7 +1794,6 @@
       updateProfileUI();
       updateHeaderGreeting();
       updateModuleList();
-      updateTenkSubjectList();
       updateAll();
     }
 
@@ -2705,7 +1803,6 @@
       if (dashTitle) {
         dashTitle.textContent = profile.name ? `Welcome back, ${profile.name}` : `Your Academic Command Center`;
       }
-      updateTenkSubjectList();
       updateGPA();
       updateTenK();
       updateSchedule();
@@ -2818,12 +1915,10 @@
       const sel = document.getElementById('moduleSelect');
       if (!sel) return;
       sel.innerHTML = '';
-      const isIS = (profile.degree === 'IS' || profile.degree === 'IS_HONS');
-      const moduleSet = isIS ? IS_MODULES : MODULES;
       ['Y1', 'Y2', 'Y3', 'Y4'].forEach(y => {
         const group = document.createElement('optgroup');
         group.label = 'Year ' + y[1];
-        moduleSet[y].forEach(m => {
+        MODULES[y].forEach(m => {
           const opt = document.createElement('option');
           opt.value = m.code + '|' + m.title + '|' + m.credits + '|' + m.area;
           opt.textContent = m.code + ' — ' + m.title;
@@ -2831,30 +1926,6 @@
         });
         sel.appendChild(group);
       });
-    }
-
-    // ==================== 10K SUBJECT LIST ====================
-    function updateTenkSubjectList() {
-      const sel = document.getElementById('tenkSubject');
-      if (!sel) return;
-      const isIS = (profile.degree === 'IS' || profile.degree === 'IS_HONS');
-      const moduleSet = isIS ? IS_MODULES : MODULES;
-      const prevVal = sel.value;
-      sel.innerHTML = '';
-      ['Y1', 'Y2', 'Y3', 'Y4'].forEach(y => {
-        const group = document.createElement('optgroup');
-        group.label = 'Year ' + y[1];
-        moduleSet[y].forEach(m => {
-          if (m.area === 'Enhancement') return; // skip enhancement for tracker
-          const opt = document.createElement('option');
-          opt.value = m.code + '|' + m.title;
-          opt.textContent = m.code + ' — ' + m.title;
-          group.appendChild(opt);
-        });
-        if (group.children.length) sel.appendChild(group);
-      });
-      // restore previous selection if still valid
-      if (prevVal) sel.value = prevVal;
     }
 
     // ==================== GPA ====================
@@ -3080,17 +2151,13 @@
 
     // ==================== 10K TRACKER ====================
     function logHours() {
-      const subjectVal = document.getElementById('tenkSubject').value;
+      const subject = document.getElementById('tenkSubject').value;
       const hrs = parseFloat(document.getElementById('tenkHours').value);
       const type = document.getElementById('tenkType').value;
       const notes = document.getElementById('tenkNotes').value;
 
-      if (!subjectVal) { showToast('Select a subject'); return; }
+      if (!subject) { showToast('Select a subject'); return; }
       if (!hrs || hrs <= 0) { showToast('Enter valid hours'); return; }
-
-      // subjectVal is "CODE|Title" — use full label as key
-      const parts = subjectVal.split('|');
-      const subject = parts.length >= 2 ? parts[0] + ' — ' + parts[1] : subjectVal;
 
       const multiplier = { deliberate: 2, passive: 1, project: 1.5 }[type];
       const effective = hrs * multiplier;
@@ -3364,12 +2431,10 @@
         // Refresh UI
         init();
 
-        // Reset inline FinanceFlow state
-        if (typeof ffAllowance !== 'undefined') {
-          ffAllowance = 0; ffExpenses = [];
-          if (typeof ffCatChart !== 'undefined' && ffCatChart) { ffCatChart.destroy(); ffCatChart = null; }
-          if (typeof ffDailyChart !== 'undefined' && ffDailyChart) { ffDailyChart.destroy(); ffDailyChart = null; }
-          if (typeof ffShowAllowance === 'function') ffShowAllowance();
+        // Notify Expense Tracker iframe to reload data
+        const iframe = document.getElementById('expenseFrame');
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage({ action: 'reloadData' }, '*');
         }
 
         showToast('All global data reset.');
@@ -3433,15 +2498,13 @@
 
             showToast('Global data imported successfully! 📥');
 
-            // Refresh Mastery Optimizer UI
+            // Refresh UI
             init();
 
-            // Reload inline FinanceFlow state
-            if (typeof ffAllowance !== 'undefined') {
-              ffAllowance = data.expenseTracker.allowance || 0;
-              ffExpenses = (data.expenseTracker.expenses || []).sort((a, b) => new Date(b.date) - new Date(a.date));
-              if (ffAllowance > 0 && typeof ffShowDash === 'function') ffShowDash();
-              else if (typeof ffShowAllowance === 'function') ffShowAllowance();
+            // Notify Expense Tracker iframe to reload data
+            const iframe = document.getElementById('expenseFrame');
+            if (iframe && iframe.contentWindow) {
+              iframe.contentWindow.postMessage({ action: 'reloadData' }, '*');
             }
           } else {
             showToast('Invalid backup file format.', 'error');
