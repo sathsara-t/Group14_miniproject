@@ -1051,9 +1051,745 @@
     </div>
   </div>
 
-  <!-- EXPENSE TRACKER -->
-  <div id="tab-expense" class="panel" style="height: 80vh; padding: 0;">
-    <iframe id="expenseFrame" src="../Expense Tracker/index.html" style="width: 100%; height: 100%; border: none; border-radius: 12px; background: var(--bg);"></iframe>
+  <!-- EXPENSE TRACKER (Inline FinanceFlow) -->
+  <div id="tab-expense" class="panel">
+
+    <!-- FF STYLES -->
+    <style>
+      /* ── FinanceFlow scoped styles ── */
+      #ff-root { font-family: 'Inter', sans-serif; color: var(--text-main); }
+      #ff-root .ff-hidden { display: none !important; }
+
+      /* Allowance section */
+      #ff-root .ff-allowance-section { margin-bottom: 2rem; }
+      #ff-root .ff-allowance-card {
+        background: var(--glass-bg); border: 1px solid var(--glass-border);
+        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border-radius: var(--radius-lg); padding: 2rem; box-shadow: var(--glass-shadow);
+      }
+      #ff-root .ff-allowance-header h2 { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 800; margin-bottom: 0.25rem; }
+      #ff-root .ff-allowance-header p  { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+      #ff-root .ff-input-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+      #ff-root .ff-currency-badge {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white; padding: 12px 18px; border-radius: var(--radius-sm);
+        font-weight: 700; font-size: 0.9rem; white-space: nowrap;
+      }
+      #ff-root .ff-allowance-input {
+        flex: 1; min-width: 160px; background: rgba(0,0,0,0.2);
+        border: 1px solid rgba(255,255,255,0.1); color: white;
+        padding: 12px 16px; border-radius: var(--radius-sm);
+        font-size: 1rem; outline: none; transition: var(--transition);
+      }
+      #ff-root .ff-allowance-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(139,92,246,0.2); }
+      #ff-root .ff-quick-amounts { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+      #ff-root .ff-quick-label { font-size: 0.8rem; color: var(--text-muted); }
+      #ff-root .ff-quick-btn {
+        background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+        color: var(--text-muted); padding: 6px 14px; border-radius: 100px;
+        font-size: 0.8rem; cursor: pointer; transition: var(--transition);
+      }
+      #ff-root .ff-quick-btn:hover { background: rgba(139,92,246,0.15); color: white; border-color: var(--primary); }
+
+      /* Dashboard stat grid */
+      #ff-root .ff-stats-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;
+      }
+      @media(max-width: 900px) { #ff-root .ff-stats-grid { grid-template-columns: repeat(2, 1fr); } }
+      @media(max-width: 500px)  { #ff-root .ff-stats-grid { grid-template-columns: 1fr; } }
+      #ff-root .ff-stat-card {
+        background: var(--glass-bg); border: 1px solid var(--glass-border);
+        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border-radius: var(--radius-md); padding: 1.25rem;
+        display: flex; align-items: center; gap: 1rem; position: relative;
+        transition: var(--transition);
+      }
+      #ff-root .ff-stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
+      #ff-root .ff-stat-icon { font-size: 1.8rem; }
+      #ff-root .ff-stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+      #ff-root .ff-stat-value { font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: white; }
+      #ff-root .ff-stat-edit-btn {
+        position: absolute; top: 10px; right: 12px; background: none;
+        border: none; cursor: pointer; font-size: 0.85rem; opacity: 0.5;
+        transition: opacity 0.2s;
+      }
+      #ff-root .ff-stat-edit-btn:hover { opacity: 1; }
+
+      /* Progress */
+      #ff-root .ff-progress-card {
+        background: var(--glass-bg); border: 1px solid var(--glass-border);
+        backdrop-filter: blur(16px); border-radius: var(--radius-md);
+        padding: 1.25rem; margin-bottom: 1.5rem;
+      }
+      #ff-root .ff-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+      #ff-root .ff-progress-title { font-weight: 600; font-size: 0.9rem; }
+      #ff-root .ff-progress-pct { font-family: 'Space Mono', monospace; font-size: 0.85rem; color: var(--primary); }
+      #ff-root .ff-progress-track {
+        height: 10px; background: rgba(255,255,255,0.05); border-radius: 100px;
+        overflow: hidden; margin-bottom: 0.5rem;
+      }
+      #ff-root .ff-progress-fill {
+        height: 100%; border-radius: 100px;
+        background: linear-gradient(90deg, var(--accent), var(--secondary));
+        transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+      }
+      #ff-root .ff-progress-fill.warn { background: linear-gradient(90deg, var(--warning), var(--danger)); }
+      #ff-root .ff-progress-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); }
+      #ff-root .ff-budget-status { margin-top: 0.5rem; font-size: 0.82rem; font-weight: 600; }
+      #ff-root .ff-status-good  { color: var(--accent); }
+      #ff-root .ff-status-warn  { color: var(--warning); }
+      #ff-root .ff-status-danger{ color: var(--danger); }
+
+      /* Two column layout */
+      #ff-root .ff-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+      @media(max-width: 800px) { #ff-root .ff-two-col { grid-template-columns: 1fr; } }
+
+      /* Expense form */
+      #ff-root .ff-form-card, #ff-root .ff-chart-card, #ff-root .ff-table-card, #ff-root .ff-line-card {
+        background: var(--glass-bg); border: 1px solid var(--glass-border);
+        backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+        border-radius: var(--radius-lg); padding: 1.5rem; box-shadow: var(--glass-shadow);
+      }
+      #ff-root .ff-card-title {
+        font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--text-muted);
+        margin-bottom: 1.25rem; font-family: 'Space Mono', monospace;
+      }
+      #ff-root .ff-form-group { margin-bottom: 1rem; }
+      #ff-root .ff-form-group label { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 0.4rem; }
+      #ff-root .ff-form-group input,
+      #ff-root .ff-form-group select {
+        width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
+        color: white; padding: 10px 14px; border-radius: var(--radius-sm);
+        font-family: var(--font-body); font-size: 0.95rem; outline: none;
+        transition: var(--transition);
+      }
+      #ff-root .ff-form-group input:focus,
+      #ff-root .ff-form-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(139,92,246,0.2); }
+      #ff-root .ff-form-group select { cursor: pointer; background-color: #1e293b; }
+      #ff-root .ff-form-group select option { background-color: #1e293b; color: #fff; }
+      #ff-root .ff-btn-add {
+        width: 100%; padding: 12px; border: none; border-radius: var(--radius-sm);
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white; font-family: var(--font-heading); font-size: 1rem; font-weight: 600;
+        cursor: pointer; transition: var(--transition);
+      }
+      #ff-root .ff-btn-add:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 6px 20px rgba(139,92,246,0.4); }
+      #ff-root .ff-form-msg { margin-top: 0.75rem; font-size: 0.85rem; min-height: 1.2em; }
+      #ff-root .ff-form-msg.success { color: var(--accent); }
+      #ff-root .ff-form-msg.error   { color: var(--danger); }
+
+      /* Chart */
+      #ff-root .ff-chart-wrap { position: relative; height: 220px; display: flex; align-items: center; justify-content: center; }
+      #ff-root .ff-chart-empty { position: absolute; color: var(--text-muted); font-size: 0.85rem; pointer-events: none; }
+      #ff-root .ff-legend-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.4rem; max-height: 140px; overflow-y: auto; }
+      #ff-root .ff-legend-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; }
+      #ff-root .ff-legend-dot { width: 10px; height: 10px; border-radius: 50%; margin-right: 0.5rem; flex-shrink: 0; }
+      #ff-root .ff-legend-name { flex: 1; color: var(--text-muted); }
+      #ff-root .ff-legend-val  { font-weight: 600; color: white; font-family: 'Space Mono', monospace; font-size: 0.75rem; }
+
+      /* Line chart */
+      #ff-root .ff-line-card { margin-bottom: 1.5rem; }
+      #ff-root .ff-line-wrap { height: 200px; }
+
+      /* Table */
+      #ff-root .ff-table-card { margin-bottom: 1.5rem; }
+      #ff-root .ff-table-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+      #ff-root .ff-table-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+      #ff-root .ff-search-input, #ff-root .ff-filter-select, #ff-root .ff-filter-date {
+        background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
+        color: white; padding: 8px 12px; border-radius: var(--radius-sm);
+        font-family: var(--font-body); font-size: 0.82rem; outline: none;
+      }
+      #ff-root .ff-search-input { width: 150px; }
+      #ff-root .ff-filter-select, #ff-root .ff-filter-date { cursor: pointer; background-color: #1e293b; }
+      #ff-root .ff-search-input:focus, #ff-root .ff-filter-select:focus { border-color: var(--primary); }
+      #ff-root .ff-table-scroll { overflow-x: auto; }
+      #ff-root .ff-expense-table { width: 100%; border-collapse: collapse; }
+      #ff-root .ff-expense-table th {
+        font-family: var(--font-heading); font-size: 0.8rem; font-weight: 600;
+        color: var(--text-muted); padding: 10px 14px; text-align: left;
+        border-bottom: 1px solid var(--glass-border);
+      }
+      #ff-root .ff-expense-table td { padding: 10px 14px; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; }
+      #ff-root .ff-expense-table tr:hover td { background: rgba(255,255,255,0.02); }
+      #ff-root .ff-expense-table tr:last-child td { border-bottom: none; }
+      #ff-root .ff-table-empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-muted); font-size: 0.9rem; }
+      #ff-root .ff-table-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); font-size: 0.82rem; color: var(--text-muted); }
+      #ff-root .ff-btn-export {
+        background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border);
+        color: white; padding: 7px 16px; border-radius: var(--radius-sm);
+        font-size: 0.82rem; cursor: pointer; transition: var(--transition); font-family: var(--font-body);
+      }
+      #ff-root .ff-btn-export:hover { background: rgba(255,255,255,0.12); }
+      #ff-root .ff-cat-badge {
+        display: inline-block; padding: 3px 10px; border-radius: 100px;
+        font-size: 0.72rem; font-weight: 600; background: rgba(139,92,246,0.15); color: var(--primary);
+      }
+      #ff-root .ff-del-btn {
+        background: rgba(239,68,68,0.1); border: none; color: var(--danger);
+        width: 28px; height: 28px; border-radius: 6px; cursor: pointer;
+        font-size: 0.85rem; transition: var(--transition); display: inline-flex; align-items: center; justify-content: center;
+      }
+      #ff-root .ff-del-btn:hover { background: rgba(239,68,68,0.25); }
+
+      /* Section header */
+      #ff-root .ff-section-header { margin-bottom: 1.5rem; }
+      #ff-root .ff-section-header h2 { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 800; margin-bottom: 0.25rem; }
+      #ff-root .ff-section-header p  { color: var(--text-muted); font-size: 0.85rem; }
+    </style>
+
+    <div id="ff-root">
+      <!-- Section header -->
+      <div class="ff-section-header animate-fade-up">
+        <h2>💸 FinanceFlow — Student Budget Tracker</h2>
+        <p>Track your monthly allowance and daily expenses</p>
+      </div>
+
+      <!-- ALLOWANCE SETUP -->
+      <div class="ff-allowance-section ff-hidden" id="ff-allowanceSection">
+        <div class="ff-allowance-card">
+          <div class="ff-allowance-header">
+            <h2>Monthly Allowance Setup</h2>
+            <p>Set your total budget for <span id="ff-monthLabel"></span></p>
+          </div>
+          <div class="ff-input-row">
+            <div class="ff-currency-badge">LKR</div>
+            <input type="number" id="ff-allowanceInput" class="ff-allowance-input" placeholder="e.g. 15000" min="0" step="100" />
+            <button class="btn btn-primary" id="ff-setAllowanceBtn">Set Budget</button>
+          </div>
+          <div class="ff-quick-amounts">
+            <span class="ff-quick-label">Quick set:</span>
+            <button class="ff-quick-btn" onclick="ffQuickSet(5000)">5,000</button>
+            <button class="ff-quick-btn" onclick="ffQuickSet(10000)">10,000</button>
+            <button class="ff-quick-btn" onclick="ffQuickSet(15000)">15,000</button>
+            <button class="ff-quick-btn" onclick="ffQuickSet(25000)">25,000</button>
+            <button class="ff-quick-btn" onclick="ffQuickSet(50000)">50,000</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="ff-dashboard" class="ff-hidden">
+
+        <!-- STAT CARDS -->
+        <div class="ff-stats-grid">
+          <div class="ff-stat-card">
+            <div class="ff-stat-icon">💰</div>
+            <div>
+              <div class="ff-stat-label">Total Allowance</div>
+              <div class="ff-stat-value" id="ff-statAllowance">LKR 0</div>
+            </div>
+            <button class="ff-stat-edit-btn" id="ff-editAllowanceBtn" title="Edit allowance">✏️</button>
+          </div>
+          <div class="ff-stat-card">
+            <div class="ff-stat-icon">💸</div>
+            <div>
+              <div class="ff-stat-label">Total Spent</div>
+              <div class="ff-stat-value" id="ff-statSpent">LKR 0</div>
+            </div>
+          </div>
+          <div class="ff-stat-card">
+            <div class="ff-stat-icon">🏦</div>
+            <div>
+              <div class="ff-stat-label">Remaining</div>
+              <div class="ff-stat-value" id="ff-statRemaining">LKR 0</div>
+            </div>
+          </div>
+          <div class="ff-stat-card">
+            <div class="ff-stat-icon">📅</div>
+            <div>
+              <div class="ff-stat-label">Daily Budget Left</div>
+              <div class="ff-stat-value" id="ff-statDaily">LKR 0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div class="ff-progress-card">
+          <div class="ff-progress-header">
+            <span class="ff-progress-title">Remaining Budget</span>
+            <span class="ff-progress-pct" id="ff-progressPct">100%</span>
+          </div>
+          <div class="ff-progress-track">
+            <div class="ff-progress-fill" id="ff-progressFill" style="width:100%"></div>
+          </div>
+          <div class="ff-progress-labels">
+            <span>LKR 0</span>
+            <span id="ff-progressMax">LKR 0</span>
+          </div>
+          <div class="ff-budget-status" id="ff-budgetStatus"></div>
+        </div>
+
+        <!-- TWO COLUMN: FORM + CHART -->
+        <div class="ff-two-col">
+          <!-- ADD EXPENSE FORM -->
+          <div class="ff-form-card">
+            <div class="ff-card-title">➕ Add Expense</div>
+            <div class="ff-form-group">
+              <label for="ff-expDate">Date</label>
+              <input type="date" id="ff-expDate" />
+            </div>
+            <div class="ff-form-group">
+              <label for="ff-expDesc">Description</label>
+              <input type="text" id="ff-expDesc" placeholder="e.g. Lunch, Bus fare…" maxlength="60" />
+            </div>
+            <div class="ff-form-group">
+              <label for="ff-expAmount">Amount (LKR)</label>
+              <input type="number" id="ff-expAmount" placeholder="0.00" min="0" step="0.01" />
+            </div>
+            <div class="ff-form-group">
+              <label for="ff-expCategory">Category</label>
+              <select id="ff-expCategory">
+                <option value="Food & Dining">🍔 Food &amp; Dining</option>
+                <option value="Transport">🚌 Transport</option>
+                <option value="Education">📚 Education</option>
+                <option value="Entertainment">🎮 Entertainment</option>
+                <option value="Health">💊 Health</option>
+                <option value="Shopping">🛍️ Shopping</option>
+                <option value="Utilities">💡 Utilities</option>
+                <option value="Savings">🐷 Savings</option>
+                <option value="Other">📦 Other</option>
+              </select>
+            </div>
+            <button class="ff-btn-add" id="ff-addExpenseBtn">Add Expense</button>
+            <div class="ff-form-msg" id="ff-formMsg"></div>
+          </div>
+
+          <!-- DOUGHNUT CHART -->
+          <div class="ff-chart-card">
+            <div class="ff-card-title">📊 Spending by Category</div>
+            <div class="ff-chart-wrap">
+              <canvas id="ff-categoryChart"></canvas>
+              <div class="ff-chart-empty" id="ff-categoryChartEmpty">No expenses yet</div>
+            </div>
+            <div class="ff-legend-list" id="ff-legendList"></div>
+          </div>
+        </div>
+
+        <!-- DAILY SPENDING LINE CHART -->
+        <div class="ff-line-card">
+          <div class="ff-card-title">📈 Daily Spending This Month</div>
+          <div class="ff-line-wrap">
+            <canvas id="ff-dailyChart"></canvas>
+          </div>
+        </div>
+
+        <!-- EXPENSE TABLE -->
+        <div class="ff-table-card">
+          <div class="ff-table-header">
+            <div class="ff-card-title" style="margin:0;">🧾 Expense Log</div>
+            <div class="ff-table-controls">
+              <input type="text" id="ff-searchInput" placeholder="Search…" class="ff-search-input" />
+              <input type="date" id="ff-filterDate" class="ff-filter-date" title="Filter by date" />
+              <select id="ff-filterCategory" class="ff-filter-select">
+                <option value="all">All Categories</option>
+                <option value="Food & Dining">🍔 Food &amp; Dining</option>
+                <option value="Transport">🚌 Transport</option>
+                <option value="Education">📚 Education</option>
+                <option value="Entertainment">🎮 Entertainment</option>
+                <option value="Health">💊 Health</option>
+                <option value="Shopping">🛍️ Shopping</option>
+                <option value="Utilities">💡 Utilities</option>
+                <option value="Savings">🐷 Savings</option>
+                <option value="Other">📦 Other</option>
+              </select>
+              <select id="ff-filterRange" class="ff-filter-select">
+                <option value="all">All Time</option>
+                <option value="7days">Last 7 Days</option>
+                <option value="lastMonth">Last Month</option>
+              </select>
+            </div>
+          </div>
+          <div class="ff-table-scroll">
+            <table class="ff-expense-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="ff-expenseBody"></tbody>
+            </table>
+            <div class="ff-table-empty ff-hidden" id="ff-tableEmpty">No expenses recorded yet. Add your first expense! 🎉</div>
+          </div>
+          <div class="ff-table-footer">
+            <span id="ff-recordCount">0 records</span>
+            <button class="ff-btn-export" id="ff-exportBtn">⬇ Export CSV</button>
+          </div>
+        </div>
+
+      </div><!-- /ff-dashboard -->
+    </div><!-- /ff-root -->
+
+    <!-- DELETE CONFIRM MODAL -->
+    <div class="modal-overlay" id="ff-deleteModal" style="display:none; align-items:center; justify-content:center;">
+      <div class="modal-card" style="text-align:center;">
+        <div style="font-size:2.5rem; margin-bottom:1rem;">🗑️</div>
+        <h3 style="margin-bottom:0.5rem;">Delete Expense?</h3>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem;">This action cannot be undone.</p>
+        <div style="display:flex; gap:1rem; justify-content:center;">
+          <button class="btn btn-secondary" id="ff-cancelDeleteBtn">Cancel</button>
+          <button class="btn btn-danger"    id="ff-confirmDeleteBtn">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (function() {
+      'use strict';
+
+      // ── State ──
+      const FF_ALLOWANCE_KEY = 'financeFlow_allowance';
+      const FF_EXPENSES_KEY  = 'financeFlow_expenses';
+
+      let ffAllowance = parseFloat(localStorage.getItem(FF_ALLOWANCE_KEY) || '0');
+      let ffExpenses  = JSON.parse(localStorage.getItem(FF_EXPENSES_KEY)  || '[]');
+      let ffPendingDeleteId = null;
+      let ffCatChart = null;
+      let ffDailyChart = null;
+
+      const CAT_COLORS = {
+        'Food & Dining':'#f59e0b','Transport':'#3b82f6','Education':'#8b5cf6',
+        'Entertainment':'#ec4899','Health':'#10b981','Shopping':'#f97316',
+        'Utilities':'#06b6d4','Savings':'#22c55e','Other':'#94a3b8'
+      };
+
+      // ── Helpers ──
+      function ffSave() {
+        localStorage.setItem(FF_ALLOWANCE_KEY, ffAllowance.toString());
+        localStorage.setItem(FF_EXPENSES_KEY, JSON.stringify(ffExpenses));
+      }
+
+      function ffFmt(n) {
+        return 'LKR ' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function ffToday() {
+        return new Date().toISOString().split('T')[0];
+      }
+
+      function ffDaysLeftInMonth() {
+        const now = new Date();
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        return lastDay - now.getDate() + 1;
+      }
+
+      function ffMonthLabel() {
+        return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      }
+
+      function ffMonthExpenses() {
+        const now = new Date();
+        const yr = now.getFullYear(), mo = now.getMonth();
+        return ffExpenses.filter(e => {
+          const d = new Date(e.date);
+          return d.getFullYear() === yr && d.getMonth() === mo;
+        });
+      }
+
+      // ── UI toggles ──
+      function ffShowDashboard() {
+        document.getElementById('ff-allowanceSection').classList.add('ff-hidden');
+        document.getElementById('ff-dashboard').classList.remove('ff-hidden');
+        ffRefreshAll();
+      }
+
+      function ffShowAllowanceSetup() {
+        document.getElementById('ff-allowanceSection').classList.remove('ff-hidden');
+        document.getElementById('ff-dashboard').classList.add('ff-hidden');
+        document.getElementById('ff-monthLabel').textContent = ffMonthLabel();
+        document.getElementById('ff-allowanceInput').value = '';
+      }
+
+      // ── Refresh ──
+      function ffRefreshAll() {
+        ffUpdateStats();
+        ffRenderTable();
+        ffRenderCatChart();
+        ffRenderDailyChart();
+      }
+
+      function ffUpdateStats() {
+        const monthExp = ffMonthExpenses();
+        const spent = monthExp.reduce((s, e) => s + e.amount, 0);
+        const remaining = ffAllowance - spent;
+        const daily = remaining / Math.max(ffDaysLeftInMonth(), 1);
+        const pct = ffAllowance > 0 ? (remaining / ffAllowance) * 100 : 100;
+
+        document.getElementById('ff-statAllowance').textContent = ffFmt(ffAllowance);
+        document.getElementById('ff-statSpent').textContent     = ffFmt(spent);
+        document.getElementById('ff-statRemaining').textContent = ffFmt(remaining);
+        document.getElementById('ff-statDaily').textContent     = ffFmt(Math.max(daily, 0));
+        document.getElementById('ff-progressPct').textContent   = Math.round(pct) + '%';
+        document.getElementById('ff-progressMax').textContent   = ffFmt(ffAllowance);
+
+        const fill = document.getElementById('ff-progressFill');
+        fill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+        fill.classList.toggle('warn', pct < 25);
+
+        const status = document.getElementById('ff-budgetStatus');
+        if (remaining < 0) {
+          status.className = 'ff-budget-status ff-status-danger';
+          status.textContent = '⚠️ Over budget by ' + ffFmt(Math.abs(remaining));
+        } else if (pct < 25) {
+          status.className = 'ff-budget-status ff-status-warn';
+          status.textContent = '⚡ Running low — only ' + Math.round(pct) + '% remaining';
+        } else {
+          status.className = 'ff-budget-status ff-status-good';
+          status.textContent = '✅ On track — ' + Math.round(pct) + '% remaining';
+        }
+      }
+
+      function ffGetFilteredExpenses() {
+        const search = (document.getElementById('ff-searchInput')?.value || '').toLowerCase();
+        const catFilter = document.getElementById('ff-filterCategory')?.value || 'all';
+        const dateFilter = document.getElementById('ff-filterDate')?.value || '';
+        const rangeFilter = document.getElementById('ff-filterRange')?.value || 'all';
+        const now = new Date();
+
+        return ffExpenses.filter(e => {
+          if (search && !e.desc.toLowerCase().includes(search) && !e.category.toLowerCase().includes(search)) return false;
+          if (catFilter !== 'all' && e.category !== catFilter) return false;
+          if (dateFilter && e.date !== dateFilter) return false;
+          if (rangeFilter === '7days') {
+            const d = new Date(e.date);
+            const diff = (now - d) / (1000 * 60 * 60 * 24);
+            if (diff > 7) return false;
+          }
+          if (rangeFilter === 'lastMonth') {
+            const d = new Date(e.date);
+            const lastMo = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const lastMoEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+            if (d < lastMo || d > lastMoEnd) return false;
+          }
+          return true;
+        });
+      }
+
+      function ffRenderTable() {
+        const tbody = document.getElementById('ff-expenseBody');
+        const empty = document.getElementById('ff-tableEmpty');
+        if (!tbody) return;
+        const filtered = ffGetFilteredExpenses();
+        const sorted = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        if (!sorted.length) {
+          tbody.innerHTML = '';
+          empty.classList.remove('ff-hidden');
+          document.getElementById('ff-recordCount').textContent = '0 records';
+          return;
+        }
+        empty.classList.add('ff-hidden');
+        document.getElementById('ff-recordCount').textContent = sorted.length + ' record' + (sorted.length > 1 ? 's' : '');
+
+        tbody.innerHTML = sorted.map(e => `
+          <tr>
+            <td>${e.date}</td>
+            <td>${e.desc}</td>
+            <td><span class="ff-cat-badge">${e.category}</span></td>
+            <td style="font-family:'Space Mono',monospace; font-weight:600;">${ffFmt(e.amount)}</td>
+            <td><button class="ff-del-btn" onclick="ffRequestDelete('${e.id}')">🗑️</button></td>
+          </tr>
+        `).join('');
+      }
+
+      function ffRenderCatChart() {
+        const monthExp = ffMonthExpenses();
+        const canvas = document.getElementById('ff-categoryChart');
+        const empty = document.getElementById('ff-categoryChartEmpty');
+        if (!canvas) return;
+
+        if (!monthExp.length) {
+          empty.style.display = 'block';
+          if (ffCatChart) { ffCatChart.destroy(); ffCatChart = null; }
+          return;
+        }
+        empty.style.display = 'none';
+
+        const totals = {};
+        monthExp.forEach(e => { totals[e.category] = (totals[e.category] || 0) + e.amount; });
+        const labels = Object.keys(totals);
+        const data   = labels.map(l => totals[l]);
+        const colors = labels.map(l => CAT_COLORS[l] || '#94a3b8');
+
+        if (ffCatChart) ffCatChart.destroy();
+        ffCatChart = new Chart(canvas, {
+          type: 'doughnut',
+          data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: 'rgba(15,23,42,0.8)' }] },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => ' ' + ffFmt(ctx.raw) + ' (' + Math.round(ctx.raw / data.reduce((a,b)=>a+b,0) * 100) + '%)'
+                }
+              }
+            },
+            cutout: '65%'
+          }
+        });
+
+        const legend = document.getElementById('ff-legendList');
+        legend.innerHTML = labels.map((l, i) => `
+          <div class="ff-legend-item">
+            <div style="display:flex;align-items:center;flex:1;">
+              <div class="ff-legend-dot" style="background:${colors[i]}"></div>
+              <span class="ff-legend-name">${l}</span>
+            </div>
+            <span class="ff-legend-val">${ffFmt(data[i])}</span>
+          </div>`).join('');
+      }
+
+      function ffRenderDailyChart() {
+        const canvas = document.getElementById('ff-dailyChart');
+        if (!canvas) return;
+        const now = new Date();
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const dailyTotals = Array(daysInMonth).fill(0);
+        ffMonthExpenses().forEach(e => {
+          const day = parseInt(e.date.split('-')[2], 10) - 1;
+          if (day >= 0 && day < daysInMonth) dailyTotals[day] += e.amount;
+        });
+        const labels = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+        if (ffDailyChart) ffDailyChart.destroy();
+        ffDailyChart = new Chart(canvas, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Spent (LKR)',
+              data: dailyTotals,
+              borderColor: '#8b5cf6',
+              backgroundColor: 'rgba(139,92,246,0.1)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.4,
+              pointRadius: 3,
+              pointBackgroundColor: '#8b5cf6'
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+              x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+              y: { ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => 'LKR ' + v.toLocaleString() }, grid: { color: 'rgba(255,255,255,0.05)' } }
+            },
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+
+      // ── Add expense ──
+      function ffAddExpense() {
+        const date   = document.getElementById('ff-expDate').value;
+        const desc   = document.getElementById('ff-expDesc').value.trim();
+        const amount = parseFloat(document.getElementById('ff-expAmount').value);
+        const cat    = document.getElementById('ff-expCategory').value;
+        const msg    = document.getElementById('ff-formMsg');
+
+        if (!date)          { msg.className = 'ff-form-msg error'; msg.textContent = '⚠️ Please select a date.'; return; }
+        if (!desc)          { msg.className = 'ff-form-msg error'; msg.textContent = '⚠️ Please enter a description.'; return; }
+        if (!amount || amount <= 0) { msg.className = 'ff-form-msg error'; msg.textContent = '⚠️ Please enter a valid amount.'; return; }
+
+        ffExpenses.push({ id: Date.now().toString(), date, desc, amount, category: cat });
+        ffSave();
+        document.getElementById('ff-expDesc').value   = '';
+        document.getElementById('ff-expAmount').value = '';
+        msg.className = 'ff-form-msg success';
+        msg.textContent = '✅ Expense added!';
+        setTimeout(() => { if (msg) msg.textContent = ''; }, 3000);
+        ffRefreshAll();
+      }
+
+      // ── Delete ──
+      window.ffRequestDelete = function(id) {
+        ffPendingDeleteId = id;
+        const modal = document.getElementById('ff-deleteModal');
+        modal.style.display = 'flex';
+      };
+
+      function ffConfirmDelete() {
+        if (!ffPendingDeleteId) return;
+        ffExpenses = ffExpenses.filter(e => e.id !== ffPendingDeleteId);
+        ffSave(); ffPendingDeleteId = null;
+        document.getElementById('ff-deleteModal').style.display = 'none';
+        ffRefreshAll();
+      }
+
+      // ── Quick set ──
+      window.ffQuickSet = function(val) {
+        document.getElementById('ff-allowanceInput').value = val;
+      };
+
+      // ── Export CSV ──
+      function ffExportCSV() {
+        if (!ffExpenses.length) { showToast('No expenses to export.'); return; }
+        const rows = [['Date','Description','Category','Amount (LKR)']];
+        [...ffExpenses].sort((a,b) => new Date(b.date)-new Date(a.date)).forEach(e => {
+          rows.push([e.date, '"'+e.desc.replace(/"/g,'""')+'"', e.category, e.amount.toFixed(2)]);
+        });
+        const csv = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url  = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'financeflow_expenses.csv'; a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // ── Init ──
+      function ffInit() {
+        // Reload fresh from localStorage (handles global import/reset)
+        ffAllowance = parseFloat(localStorage.getItem(FF_ALLOWANCE_KEY) || '0');
+        ffExpenses  = JSON.parse(localStorage.getItem(FF_EXPENSES_KEY)  || '[]');
+        document.getElementById('ff-expDate').value = ffToday();
+        if (ffAllowance > 0) {
+          ffShowDashboard();
+        } else {
+          ffShowAllowanceSetup();
+        }
+      }
+
+      // ── Event listeners ──
+      document.addEventListener('DOMContentLoaded', function() {
+        ffInit();
+
+        document.getElementById('ff-setAllowanceBtn').addEventListener('click', function() {
+          const val = parseFloat(document.getElementById('ff-allowanceInput').value);
+          if (!val || val <= 0) { showToast('Please enter a valid amount.'); return; }
+          ffAllowance = val; ffSave(); ffShowDashboard();
+          showToast('✅ Budget set to ' + ffFmt(ffAllowance));
+        });
+
+        document.getElementById('ff-editAllowanceBtn').addEventListener('click', function() {
+          ffShowAllowanceSetup();
+        });
+
+        document.getElementById('ff-addExpenseBtn').addEventListener('click', ffAddExpense);
+
+        document.getElementById('ff-exportBtn').addEventListener('click', ffExportCSV);
+
+        document.getElementById('ff-confirmDeleteBtn').addEventListener('click', ffConfirmDelete);
+        document.getElementById('ff-cancelDeleteBtn').addEventListener('click', function() {
+          document.getElementById('ff-deleteModal').style.display = 'none';
+          ffPendingDeleteId = null;
+        });
+
+        ['ff-searchInput','ff-filterCategory','ff-filterDate','ff-filterRange'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener('change', ffRenderTable);
+          if (el && el.tagName === 'INPUT') el.addEventListener('input', ffRenderTable);
+        });
+
+        // Listen for global reset/import from parent
+        window.addEventListener('message', function(e) {
+          if (e.data?.action === 'reloadData') ffInit();
+        });
+      });
+
+    })();
+    </script>
+
   </div>
 
 </main>
