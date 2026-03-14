@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -977,16 +976,8 @@
       <div class="grid-3">
         <div>
           <label>Subject / Skill</label>
-            <option>Database Management</option>
-            <option>Operating Systems</option>
-            <option>Computer Networks</option>
-            <option>Software Engineering</option>
-            <option>Machine Learning / AI</option>
-            <option>Web Development</option>
-            <option>Mathematics / Statistics</option>
-            <option>Cryptography & Security</option>
-            <option>Computer Architecture</option>
-            <option>Digital Signal Processing</option>
+          <select id="tenkSubject">
+            <!-- Populated dynamically by updateTenkSubjectList() -->
           </select>
         </div>
         <div>
@@ -1085,7 +1076,7 @@
       <div class="grid-2" style="gap: 1rem;">
         <div>
           <label>Degree Programme</label>
-          <select id="degreeSelect" onchange="updateModuleList()">
+          <select id="degreeSelect" onchange="updateModuleList(); updateTenkSubjectList();">
             <option value="CS">BSc. in Computer Science</option>
             <option value="CS_HONS">BSc. (Hons) in Computer Science</option>
             <option value="SE_HONS">BSc. (Hons) in Software Engineering</option>
@@ -1127,7 +1118,7 @@ const MODULES = {
     { code:'SCS 1301', title:'Data Structures & Program Design in C', credits:4, area:'Programming' },
     { code:'SCS 1302', title:'Discrete Mathematics', credits:2, area:'Mathematics' },
     { code:'SCS 1303', title:'Introduction to Software Engineering', credits:2, area:'SE' },
-    { code:'SCS 1304', title:'Problem Solving & Computation Approaches', credits:2, area:'Theory' },
+    { code:'SCS 1304', title:'Problem Solving Strategies & Computation Approaches', credits:2, area:'Theory' },
     { code:'SCS 1305', title:'Computer Systems', credits:2, area:'Systems' },
     { code:'SCS 1306', title:'Linear Algebra', credits:2, area:'Mathematics' },
     { code:'SCS 1307', title:'Probability & Statistics', credits:2, area:'Mathematics' },
@@ -1136,51 +1127,138 @@ const MODULES = {
     { code:'SCS 1310', title:'Object Oriented Modelling & Programming', credits:3, area:'Programming' },
     { code:'SCS 1311', title:'Internet & Web Technologies', credits:3, area:'Web' },
     { code:'SCS 1312', title:'Operating System Concepts', credits:3, area:'Systems' },
-    { code:'ENH 1301', title:'Application Laboratory', credits:1, area:'Enhancement' },
-    { code:'ENH 1302', title:'Communication Skills', credits:1, area:'Enhancement' },
-    { code:'ENH 1303', title:'Aesthetic Studies', credits:1, area:'Enhancement' },
   ],
   Y2: [
-    { code:'SCS 2301', title:'Group Project', credits:1, area:'Project' },
+    { code:'SCS 2301', title:'Group Project', credits:4, area:'Project' },
     { code:'SCS 2302', title:'Calculus', credits:2, area:'Mathematics' },
     { code:'SCS 2303', title:'Software Architectures', credits:2, area:'SE' },
     { code:'SCS 2304', title:'Advanced Algorithms', credits:3, area:'Theory' },
     { code:'SCS 2306', title:'Computer Networks', credits:3, area:'Networks' },
-    { code:'SCS 2307', title:'IT Project Management', credits:2, area:'Management' },
+    { code:'SCS 2307', title:'Information Technology Project Management', credits:2, area:'Management' },
     { code:'SCS 2308', title:'Numerical Methods', credits:2, area:'Mathematics' },
     { code:'SCS 2309', title:'Statistical Inference', credits:2, area:'Mathematics' },
     { code:'SCS 2310', title:'Digital Signal Processing', credits:2, area:'DSP' },
-    { code:'SCS 2311', title:'Cryptography & Information Security', credits:6, area:'Security' },
-    { code:'SCS 2312', title:'Computational Models & PL Concepts', credits:4, area:'Theory' },
+    { code:'SCS 2311', title:'Cryptography & Information Security', credits:2, area:'Security' },
+    { code:'SCS 2312', title:'Computational Models & Programming Language Concepts', credits:4, area:'Theory' },
     { code:'SCS 2313', title:'Computer System Architecture', credits:2, area:'Systems' },
     { code:'SCS 2314', title:'Middleware Architecture', credits:2, area:'Systems' },
     { code:'SCS 2315', title:'Electronics & Physical Computing', credits:3, area:'Hardware' },
-    { code:'ENH 2301', title:'Entrepreneurship', credits:2, area:'Enhancement' },
   ],
   Y3: [
     { code:'SCS 3301', title:'Industry Project', credits:4, area:'Project' },
-    { code:'SCS 3307', title:'Data Warehousing & Mining', credits:3, area:'Data Science' },
+    { code:'SCS 3302', title:'Computer Graphics & Image Processing', credits:3, area:'Graphics' },
+    { code:'SCS 3303', title:'Compiler Theory & Construction', credits:4, area:'Theory' },
+    { code:'SCS 3304', title:'Intelligent Systems', credits:2, area:'AI/ML' },
+    { code:'SCS 3305', title:'Robotics & Cognitive Systems', credits:3, area:'Robotics' },
+    { code:'SCS 3306', title:'Digital Forensics', credits:3, area:'Security' },
+    { code:'SCS 3307', title:'Data Warehousing & Mining', credits:2, area:'Data Science' },
     { code:'SCS 3308', title:'Machine Learning', credits:3, area:'AI/ML' },
     { code:'SCS 3309', title:'Human-Computer Interaction', credits:3, area:'HCI' },
     { code:'SCS 3310', title:'System & Network Administration', credits:3, area:'Networks' },
-    { code:'SCS 3311', title:'Mobile Application Development', credits:3, area:'Mobile' },
-    { code:'SCS 3312', title:'Compiler Theory & Construction', credits:4, area:'Theory' },
-    { code:'SCS 3313', title:'Intelligent Systems', credits:2, area:'AI/ML' },
-    { code:'SCS 3314', title:'Robotics & Cognitive Systems', credits:3, area:'Robotics' },
-    { code:'SCS 3315', title:'Digital Forensics', credits:3, area:'Security' },
-    { code:'SCS 3316', title:'Research Methods', credits:2, area:'Research' },
-    { code:'SCS 3317', title:'Computer Graphics & Image Processing', credits:3, area:'Graphics' },
-    { code:'ENH 3301', title:'Professional Skills', credits:2, area:'Enhancement' },
+    { code:'SCS 3311', title:'Mobile Application Designing & Development', credits:3, area:'Mobile' },
+    { code:'SCS 3312', title:'Research Methods', credits:2, area:'Research' },
+    { code:'SCS 3313', title:'Applied Machine Learning', credits:3, area:'AI/ML' },
+    { code:'SCS 3314', title:'Database Programming', credits:3, area:'Databases' },
+    { code:'SCS 3315', title:'Literature Review', credits:2, area:'Research' },
+    { code:'SCS 3316', title:'Software Quality Assurance', credits:3, area:'SE' },
+    { code:'SCS 3317', title:'Professional Practice & Behavior', credits:1, area:'Professional' },
   ],
   Y4: [
-    { code:'SCS 4301', title:'Research Project / Dissertation', credits:6, area:'Project' },
-    { code:'SCS 4302', title:'Distributed Systems', credits:3, area:'Systems' },
-    { code:'SCS 4303', title:'Cloud Computing', credits:3, area:'Cloud' },
-    { code:'SCS 4304', title:'Deep Learning', credits:3, area:'AI/ML' },
-    { code:'SCS 4305', title:'Software Quality Assurance', credits:2, area:'SE' },
-    { code:'SCS 4306', title:'Advanced Database Systems', credits:3, area:'Databases' },
-    { code:'SCS 4307', title:'Natural Language Processing', credits:3, area:'AI/ML' },
-    { code:'SCS 4308', title:'Computer Vision', credits:3, area:'AI/ML' },
+    { code:'SCS 4301', title:'Advanced Operating Systems', credits:2, area:'Systems' },
+    { code:'SCS 4302', title:'Advanced Computer Networks', credits:2, area:'Networks' },
+    { code:'SCS 4303', title:'Computer Vision & Deep Learning', credits:3, area:'AI/ML' },
+    { code:'SCS 4304', title:'Natural Language Processing', credits:3, area:'AI/ML' },
+    { code:'SCS 4305', title:'Research Seminar', credits:2, area:'Research' },
+    { code:'SCS 4306', title:'Formal Methods & Software Verification', credits:2, area:'SE' },
+    { code:'SCS 4307', title:'Computational Biology', credits:2, area:'Theory' },
+    { code:'SCS 4308', title:'Distributed Systems', credits:2, area:'Systems' },
+    { code:'SCS 4309', title:'Final Year Project in Software Engineering', credits:8, area:'Project' },
+    { code:'SCS 4310', title:'Final Year Project in Computer Science', credits:8, area:'Project' },
+    { code:'SCS 4311', title:'Philosophy of Science', credits:1, area:'Research' },
+    { code:'SCS 4312', title:'Advanced Database Systems', credits:3, area:'Databases' },
+    { code:'SCS 4313', title:'Advanced Software Engineering', credits:2, area:'SE' },
+    { code:'SCS 4314', title:'Software Quality & Security Assurance', credits:2, area:'SE' },
+    { code:'SCS 4315', title:'Embedded Systems', credits:3, area:'Hardware' },
+    { code:'SCS 4316', title:'Analog, Quantum & Alternative Computing Models', credits:2, area:'Theory' },
+    { code:'SCS 4317', title:'Game Theory', credits:2, area:'Theory' },
+    { code:'SCS 4318', title:'Advanced Computer Graphics', credits:3, area:'Graphics' },
+    { code:'SCS 4319', title:'Enterprise Architectures', credits:2, area:'Systems' },
+    { code:'SCS 4320', title:'Secure Software Engineering', credits:2, area:'Security' },
+    { code:'SCS 4321', title:'Network Security', credits:3, area:'Security' },
+    { code:'SCS 4322', title:'Parallel Computing', credits:2, area:'Systems' },
+    { code:'SCS 4323', title:'Natural Algorithms', credits:2, area:'Theory' },
+  ]
+};
+
+const IS_MODULES = {
+  Y1: [
+    { code:'IS 1201', title:'Programming & Problem Solving', credits:3, area:'Programming' },
+    { code:'IS 1202', title:'Computer Systems', credits:2, area:'Systems' },
+    { code:'IS 1203', title:'Foundations of Information Systems', credits:2, area:'IS' },
+    { code:'IS 1204', title:'Fundamentals of Software Engineering', credits:2, area:'SE' },
+    { code:'IS 1205', title:'Introduction to Management', credits:2, area:'Management' },
+    { code:'IS 1206', title:'Mathematics for Computing', credits:2, area:'Mathematics' },
+    { code:'IS 1207', title:'Internet & Web Technologies', credits:3, area:'Web' },
+    { code:'IS 1208', title:'Systems Analysis & Design', credits:2, area:'IS' },
+    { code:'IS 1209', title:'Information Technology Project Management', credits:2, area:'Management' },
+    { code:'IS 1210', title:'Database Systems', credits:3, area:'Databases' },
+    { code:'IS 1211', title:'Computer Networks', credits:3, area:'Networks' },
+    { code:'IS 1212', title:'Probability & Statistics', credits:3, area:'Mathematics' },
+    { code:'IS 1213', title:'Organizational Behavior', credits:2, area:'Management' },
+    { code:'IS 1214', title:'Data Structures & Algorithms', credits:3, area:'Programming' },
+  ],
+  Y2: [
+    { code:'IS 2201', title:'Group Project', credits:4, area:'Project' },
+    { code:'IS 2202', title:'Advanced Data Structures & Algorithms', credits:2, area:'Programming' },
+    { code:'IS 2203', title:'Object Oriented Programming', credits:3, area:'Programming' },
+    { code:'IS 2204', title:'Information Systems Security', credits:2, area:'Security' },
+    { code:'IS 2205', title:'Mobile Application Design & Development', credits:3, area:'Mobile' },
+    { code:'IS 2206', title:'Business Process Management', credits:3, area:'Management' },
+    { code:'IS 2207', title:'Electronics & Physical Computing', credits:3, area:'Hardware' },
+    { code:'IS 2208', title:'Information Systems Management & Strategy', credits:2, area:'Management' },
+    { code:'IS 2209', title:'Data Management & Governance', credits:4, area:'Databases' },
+    { code:'IS 2210', title:'Applied Data Science', credits:3, area:'Data Science' },
+    { code:'IS 2211', title:'UI/UX Design', credits:3, area:'Design' },
+    { code:'IS 2212', title:'Cloud Infrastructure & Applications', credits:2, area:'Cloud' },
+  ],
+  Y3: [
+    { code:'IS 3201', title:'Industry Project', credits:4, area:'Project' },
+    { code:'IS 3202', title:'Research Methods', credits:2, area:'Research' },
+    { code:'IS 3203', title:'Cybercrime, Privacy & Legislation', credits:2, area:'Security' },
+    { code:'IS 3204', title:'Enterprise Resource Planning Systems', credits:2, area:'IS' },
+    { code:'IS 3205', title:'Data Visualization', credits:3, area:'Data Science' },
+    { code:'IS 3206', title:'Enterprise Architecture', credits:2, area:'IS' },
+    { code:'IS 3207', title:'E-Business & Digital Marketing', credits:2, area:'IS' },
+    { code:'IS 3208', title:'Middleware Architecture', credits:3, area:'Systems' },
+    { code:'IS 3209', title:'Systems & Network Administration', credits:3, area:'Networks' },
+    { code:'IS 3210', title:'Digital Innovation', credits:2, area:'IS' },
+    { code:'IS 3211', title:'Operations Research', credits:2, area:'Management' },
+    { code:'IS 3212', title:'Robotics & Cognitive Systems', credits:3, area:'Robotics' },
+    { code:'IS 3213', title:'Literature Survey', credits:2, area:'Research' },
+    { code:'IS 3214', title:'Professional Practice & Behavior', credits:1, area:'Professional' },
+    { code:'IS 3215', title:'Software Quality Assurance', credits:3, area:'SE' },
+    { code:'IS 3216', title:'Applied Machine Learning', credits:3, area:'AI/ML' },
+    { code:'IS 3217', title:'Social Impact of Information Systems & Ethics', credits:1, area:'IS' },
+    { code:'IS 3218', title:'E-Learning Concepts & Technologies', credits:3, area:'IS' },
+    { code:'IS 3219', title:'Information Technology Audit', credits:2, area:'IS' },
+    { code:'IS 3220', title:'Interactive Media Design', credits:2, area:'Design' },
+    { code:'IS 3221', title:'Contemporary Topics in Software Development', credits:2, area:'SE' },
+  ],
+  Y4: [
+    { code:'IS 4201', title:'Final Year Project in Information Systems', credits:8, area:'Project' },
+    { code:'IS 4202', title:'Research Seminar', credits:2, area:'Research' },
+    { code:'IS 4203', title:'Data Analytics', credits:3, area:'Data Science' },
+    { code:'IS 4204', title:'Software Quality Assurance', credits:3, area:'SE' },
+    { code:'IS 4205', title:'Machine Learning', credits:3, area:'AI/ML' },
+    { code:'IS 4206', title:'Advanced Concepts in Software Design & Development', credits:2, area:'SE' },
+    { code:'IS 4207', title:'Geographical Information Systems', credits:3, area:'IS' },
+    { code:'IS 4208', title:'Natural Language Processing', credits:3, area:'AI/ML' },
+    { code:'IS 4209', title:'Business Intelligence Systems', credits:2, area:'IS' },
+    { code:'IS 4210', title:'Philosophy of Science & Computational Thinking', credits:1, area:'Research' },
+    { code:'IS 4211', title:'Contemporary Topics in Information Systems', credits:2, area:'IS' },
+    { code:'IS 4212', title:'Affective Computing', credits:2, area:'AI/ML' },
+    { code:'IS 4213', title:'Digital Forensics', credits:3, area:'Security' },
+    { code:'IS 4214', title:'Bio-Informatics', credits:2, area:'IS' },
   ]
 };
 
@@ -1198,6 +1276,7 @@ function init() {
   updateProfileUI();
   updateHeaderGreeting();
   updateModuleList();
+  updateTenkSubjectList();
   updateAll();
 }
 
@@ -1318,11 +1397,13 @@ function completeRegistration() {
 function updateModuleList() {
   const sel = document.getElementById('moduleSelect');
   if(!sel) return;
+  const isIS = (profile.degree === 'IS' || profile.degree === 'IS_HONS');
+  const moduleSet = isIS ? IS_MODULES : MODULES;
   sel.innerHTML = '';
   ['Y1','Y2','Y3','Y4'].forEach(y => {
     const group = document.createElement('optgroup');
     group.label = 'Year ' + y[1];
-    MODULES[y].forEach(m => {
+    moduleSet[y].forEach(m => {
       const opt = document.createElement('option');
       opt.value = m.code + '|' + m.title + '|' + m.credits + '|' + m.area;
       opt.textContent = m.code + ' — ' + m.title;
@@ -1330,6 +1411,28 @@ function updateModuleList() {
     });
     sel.appendChild(group);
   });
+}
+
+function updateTenkSubjectList() {
+  const sel = document.getElementById('tenkSubject');
+  if (!sel) return;
+  const isIS = (profile.degree === 'IS' || profile.degree === 'IS_HONS');
+  const moduleSet = isIS ? IS_MODULES : MODULES;
+  const prev = sel.value;
+  sel.innerHTML = '';
+  ['Y1','Y2','Y3','Y4'].forEach(y => {
+    const group = document.createElement('optgroup');
+    group.label = 'Year ' + y[1];
+    moduleSet[y].forEach(m => {
+      if (m.code.startsWith('ENH') || m.code.startsWith('EN ')) return;
+      const opt = document.createElement('option');
+      opt.value = m.code + '|' + m.title;
+      opt.textContent = m.code + ' — ' + m.title;
+      group.appendChild(opt);
+    });
+    sel.appendChild(group);
+  });
+  if (prev) sel.value = prev;
 }
 
 // ==================== GPA ====================
@@ -1555,13 +1658,16 @@ function renderPareto() {
 
 // ==================== 10K TRACKER ====================
 function logHours() {
-  const subject = document.getElementById('tenkSubject').value;
+  const subjectVal = document.getElementById('tenkSubject').value;
   const hrs = parseFloat(document.getElementById('tenkHours').value);
   const type = document.getElementById('tenkType').value;
   const notes = document.getElementById('tenkNotes').value;
 
-  if(!subject) { showToast('Select a subject'); return; }
+  if(!subjectVal) { showToast('Select a subject'); return; }
   if(!hrs || hrs<=0) { showToast('Enter valid hours'); return; }
+
+  const parts = subjectVal.split('|');
+  const subject = parts.length >= 2 ? parts[0] + ' — ' + parts[1] : subjectVal;
 
   const multiplier = { deliberate:2, passive:1, project:1.5 }[type];
   const effective = hrs * multiplier;
@@ -1791,6 +1897,7 @@ function switchTab(tab) {
 }
 
 function updateAll() {
+  updateTenkSubjectList();
   updateDashboard();
   renderGradeTable();
   renderPareto();
